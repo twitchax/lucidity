@@ -1,0 +1,31 @@
+[package]
+name = "lucidity-macros"
+version = "0.1.0"
+edition = "2021"
+authors = ["Aaron Roney <twitchax@gmail.com>"]
+license = "MIT"
+description = "A distributed orchestrator platform for Rust."
+readme = "../README.md"
+homepage = "https://github.com/twitchax/lucidity"
+repository = "https://github.com/twitchax/lucidity"
+keywords = ["lucidity", "orchestrator", "distributed", "macro"]
+categories = ["orchestration"]
+
+[lib]
+proc-macro = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lucidity-core = { path = "../lucidity-core" }
+
+pretty_assertions = "1.2.1"
+
+proc-macro2 = "1.0.71"
+syn = { version = "2.0.43", features = ["full"] }
+quote = "1.0.33"
+convert_case = "0.6.0"
+
+lunatic = { git = "https://github.com/twitchax/lunatic-rs" }
+serde = "1.0.193"
+rand = "0.8.5"

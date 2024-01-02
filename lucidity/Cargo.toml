@@ -1,0 +1,22 @@
+[package]
+name = "lucidity"
+version = "0.1.0"
+edition = "2021"
+authors = ["Aaron Roney <twitchax@gmail.com>"]
+license = "MIT"
+description = "A distributed orchestrator platform for Rust."
+readme = "../README.md"
+homepage = "https://github.com/twitchax/lucidity"
+repository = "https://github.com/twitchax/lucidity"
+keywords = ["lucidity", "orchestrator", "distributed", "macro"]
+categories = ["orchestration"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+fly = []
+
+[dependencies]
+
+lucidity-core = { path = "../lucidity-core" }
+lucidity-macros = { path = "../lucidity-macros" }
