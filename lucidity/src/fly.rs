@@ -182,7 +182,7 @@ fn install_apt_deps(key: &str, app_name: &str, machine_name: &str) -> Result<(),
     let command = json!([
         "su",
         "-c",
-        "apt-get update && apt-get install -y curl",
+        "apt-get update && apt-get install -y curl sqlite3",
         "root"
     ]);
 
