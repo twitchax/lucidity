@@ -14,9 +14,14 @@ categories = ["orchestration"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+default = ["fly"]
 fly = []
 
 [dependencies]
 
 lucidity-core = { path = "../lucidity-core" }
 lucidity-macros = { path = "../lucidity-macros" }
+
+nightfly = { version = "0.1.6" }
+
+serde_json = "1.0.110"
