@@ -65,16 +65,16 @@ fn ensure_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
     crate::lunatic::sleep(Duration::from_secs(30));
 
     // Create a new machine.
-    create_machine(key, app_name, machine_name, region).map_err(|e| format!("[ensure_machine] Failed to create machine.  {}", e))?;
+    create_machine(key, app_name, machine_name, region, local_machine_id).map_err(|e| format!("[ensure_machine] Failed to create machine.  {}", e))?;
 
     // Wait for the machine to be ready.
-    crate::lunatic::sleep(Duration::from_secs(60));
+    crate::lunatic::sleep(Duration::from_secs(30));
 
     // Prepare the machine.
-    prepare_machine(key, app_name, machine_name).map_err(|e| format!("[ensure_machine] Failed to prepare machine.  {}", e))?;
+    //prepare_machine(key, app_name, machine_name).map_err(|e| format!("[ensure_machine] Failed to prepare machine.  {}", e))?;
 
     // Run the lunatic process.
-    run_lunatic(key, app_name, machine_name, local_machine_id).map_err(|e| format!("[ensure_machine] Failed to run lunatic.  {}", e))?;
+    //run_lunatic(key, app_name, machine_name, local_machine_id).map_err(|e| format!("[ensure_machine] Failed to run lunatic.  {}", e))?;
 
     Ok(())
 }
@@ -105,8 +105,31 @@ fn machine_id_from_name(key: &str, app_name: &str, machine_name: &str) -> Result
     Err(format!("[machine_id_from_name] Machine with name {} not found.", machine_name))
 }
 
-fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str) -> Result<(), String> {
+fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, local_machine_id: &str) -> Result<(), String> {
     let client = nightfly::Client::new();
+
+    // let body = json!({
+    //     "name": machine_name,
+    //     "region": region,
+    //     "config": {
+    //         "init": {
+    //             "exec": [
+    //                 "/bin/sleep",
+    //                 "inf"
+    //             ]
+    //         },
+    //         "image": "ubuntu",
+    //         "auto_destroy": true,
+    //         "restart": {
+    //             "policy": "always"
+    //         },
+    //         "guest": {
+    //             "cpu_kind": "shared",
+    //             "cpus": 1,
+    //             "memory_mb": 1024
+    //         }
+    //     }
+    // });
 
     let body = json!({
         "name": machine_name,
@@ -114,11 +137,14 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str) -
         "config": {
             "init": {
                 "exec": [
-                    "/bin/sleep",
-                    "inf"
+                    "/lunatic",
+                    "node",
+                    "--bind-socket",
+                    "[::]:3031",
+                    format!("http://{}.vm.{}.internal:3030/", local_machine_id, app_name)
                 ]
             },
-            "image": "ubuntu:latest",
+            "image": "twitchax/lunatic",
             "auto_destroy": true,
             "restart": {
                 "policy": "always"
@@ -207,7 +233,7 @@ fn install_lunatic(key: &str, app_name: &str, machine_name: &str) -> Result<(), 
     let command = json!([
         "su",
         "-c",
-        "tar -xvzf lunatic-linux-amd64.tar.gz",
+        "tar -xzf lunatic-linux-amd64.tar.gz",
         "root"
     ]);
 
