@@ -59,7 +59,7 @@ pub fn ensure_machines(key: &str, count: usize) -> Result<(), String> {
 
 fn ensure_machine(key: &str, app_name: &str, machine_name: &str, region: &str, local_machine_id: &str) -> Result<(), String> {
     // Delete any existing machine.
-    delete_machine(key, app_name, machine_name)?;
+    delete_machine(key, app_name, machine_name);
 
     // Create a new machine.
     create_machine(key, app_name, machine_name, region)?;
@@ -83,7 +83,7 @@ fn list_machines(key: &str, app_name: &str) -> Result<Vec<Value>, String> {
         .get(format!("{}/apps/{}/machines", ENDPOINT, app_name))
         .bearer_auth(key)
         .send()
-        .map_err(|e| format!("Failed to send request.  {}", e))?;
+        .map_err(|e| format!("[list_machines] Failed to send request.  {}", e))?;
 
     let value = response.json::<Vec<Value>>().map_err(|e| format!("Failed to parse response.  {}", e))?;
 
@@ -99,7 +99,7 @@ fn machine_id_from_name(key: &str, app_name: &str, machine_name: &str) -> Result
         }
     }
 
-    Err(format!("Machine with name {} not found.", machine_name))
+    Err(format!("[machine_id_from_name] Machine with name {} not found.", machine_name))
 }
 
 fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str) -> Result<(), String> {
@@ -133,30 +133,30 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str) -
         .bearer_auth(key)
         .json(body)
         .send()
-        .map_err(|e| format!("Failed to send request.  {}", e))?;
+        .map_err(|e| format!("[create_machine] Failed to send request.  {}", e))?;
 
     Ok(())
 }
 
-fn delete_machine(key: &str, app_name: &str, machine_name: &str) -> Result<(), String> {
-    let machine_id = machine_id_from_name(key, app_name, machine_name)?;
+fn delete_machine(key: &str, app_name: &str, machine_name: &str) {
+    let machine_id = match machine_id_from_name(key, app_name, machine_name) {
+        Ok(o) => o,
+        Err(_) => return
+    };
+
     let client = nightfly::Client::new();
 
     // Swallow errors, as it is possible that the machine doesn't exist.
     let _ = client
         .post(format!("{}/apps/{}/machines/{}/stop", ENDPOINT, app_name, machine_id))
         .bearer_auth(key)
-        .send()
-        .map_err(|e| format!("Failed to send request.  {}", e));
+        .send();
 
     // Swallow errors, as it is possible that the machine doesn't exist.
     let _ = client
         .delete(format!("{}/apps/{}/machines/{}", ENDPOINT, app_name, machine_id))
         .bearer_auth(key)
-        .send()
-        .map_err(|e| format!("Failed to send request.  {}", e));
-
-    Ok(())
+        .send();
 }
 
 fn machine_exec(key: &str, app_name: &str, machine_name: &str, command: Value) -> Result<(), String> {
@@ -173,7 +173,7 @@ fn machine_exec(key: &str, app_name: &str, machine_name: &str, command: Value) -
         .bearer_auth(key)
         .json(body)
         .send()
-        .map_err(|e| format!("Failed to send request.  {}", e))?;
+        .map_err(|e| format!("[machine_exec] Failed to send request.  {}", e))?;
 
     Ok(())
 }
