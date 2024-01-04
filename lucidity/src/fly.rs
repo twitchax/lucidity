@@ -220,7 +220,7 @@ fn run_lunatic(key: &str, app_name: &str, machine_name: &str, local_machine_id: 
     let command = json!([
         "su",
         "-c",
-        format!("nohup /lunatic node http://{}.vm.{}.internal:3030/ > /dev/console &", local_machine_id, app_name),
+        format!("nohup /lunatic node --bind-socket [::]:3031 http://{}.vm.{}.internal:3030/ > /dev/console &", local_machine_id, app_name),
         "root"
     ]);
 
