@@ -137,12 +137,7 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
         "config": {
             "init": {
                 "exec": [
-                    "/lunatic",
-                    "node",
-                    "--bind-socket",
-                    "[::]:3031",
-                    // "--reachable-socket",
-                    // "[$FLY_PUBLIC_IP]:3031",
+                    "/app.entrypoint.sh",
                     format!("http://{}.vm.{}.internal:3030/", local_machine_id, app_name)
                 ]
             },
