@@ -150,7 +150,13 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
                 "cpu_kind": "shared",
                 "cpus": 1,
                 "memory_mb": 1024
-            }
+            },
+            "services": [
+                {
+                    "protocol": "udp",
+                    "internal_port": 3031
+                }
+            ],
         }
     });
 
