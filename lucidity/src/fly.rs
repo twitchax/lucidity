@@ -40,7 +40,7 @@ pub fn ensure_machines(key: &str, count: usize) -> Result<(), String> {
 
     // Wait for all of the processes to finish.
     for p in processes {
-        let _ = p.result();
+        p.result()?;
     }
     
     Ok(())
