@@ -139,8 +139,8 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
                 "exec": [
                     "/lunatic",
                     "node",
-                    // "--bind-socket",
-                    // "[::]:3031",
+                    "--bind-socket",
+                    "[::]:3031",
                     format!("http://{}.vm.{}.internal:3030/", local_machine_id, app_name)
                 ]
             },
