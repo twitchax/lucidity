@@ -61,17 +61,20 @@ fn ensure_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
     // Delete any existing machine.
     delete_machine(key, app_name, machine_name);
 
+    // Wait for the machine to be deleted.
+    crate::lunatic::sleep(Duration::from_secs(30));
+
     // Create a new machine.
-    create_machine(key, app_name, machine_name, region)?;
+    create_machine(key, app_name, machine_name, region).map_err(|e| format!("[ensure_machine] Failed to create machine.  {}", e))?;
 
     // Wait for the machine to be ready.
     crate::lunatic::sleep(Duration::from_secs(60));
 
     // Prepare the machine.
-    prepare_machine(key, app_name, machine_name)?;
+    prepare_machine(key, app_name, machine_name).map_err(|e| format!("[ensure_machine] Failed to prepare machine.  {}", e))?;
 
     // Run the lunatic process.
-    run_lunatic(key, app_name, machine_name, local_machine_id)?;
+    run_lunatic(key, app_name, machine_name, local_machine_id).map_err(|e| format!("[ensure_machine] Failed to run lunatic.  {}", e))?;
 
     Ok(())
 }
@@ -85,13 +88,13 @@ fn list_machines(key: &str, app_name: &str) -> Result<Vec<Value>, String> {
         .send()
         .map_err(|e| format!("[list_machines] Failed to send request.  {}", e))?;
 
-    let value = response.json::<Vec<Value>>().map_err(|e| format!("Failed to parse response.  {}", e))?;
+    let value = response.json::<Vec<Value>>().map_err(|e| format!("[list_machines] Failed to parse response.  {}", e))?;
 
     Ok(value)
 }
 
 fn machine_id_from_name(key: &str, app_name: &str, machine_name: &str) -> Result<String, String> {
-    let machines = list_machines(key, app_name)?;
+    let machines = list_machines(key, app_name).map_err(|e| format!("[machine_id_from_name] Failed to list machines.  {}", e))?;
 
     for machine in machines {
         if machine["name"].as_str().unwrap() == machine_name {
@@ -160,7 +163,7 @@ fn delete_machine(key: &str, app_name: &str, machine_name: &str) {
 }
 
 fn machine_exec(key: &str, app_name: &str, machine_name: &str, command: Value) -> Result<(), String> {
-    let machine_id = machine_id_from_name(key, app_name, machine_name)?;
+    let machine_id = machine_id_from_name(key, app_name, machine_name).map_err(|e| format!("[machine_exec] Failed to get machine id.  {}", e))?;
     let client = nightfly::Client::new();
 
     let body = json!({
@@ -186,7 +189,7 @@ fn install_apt_deps(key: &str, app_name: &str, machine_name: &str) -> Result<(),
         "root"
     ]);
 
-    machine_exec(key, app_name, machine_name, command)?;
+    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[install_apt_deps] Failed to exec.  {}", e))?;
 
     Ok(())
 }
@@ -199,7 +202,7 @@ fn install_lunatic(key: &str, app_name: &str, machine_name: &str) -> Result<(), 
         "root"
     ]);
 
-    machine_exec(key, app_name, machine_name, command)?;
+    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[install_lunatic] Failed to exec download.  {}", e))?;
 
     let command = json!([
         "su",
@@ -208,7 +211,7 @@ fn install_lunatic(key: &str, app_name: &str, machine_name: &str) -> Result<(), 
         "root"
     ]);
 
-    machine_exec(key, app_name, machine_name, command)?;
+    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[install_lunatic] Failed to exec untar.  {}", e))?;
 
     Ok(())
 }
@@ -221,7 +224,7 @@ fn run_lunatic(key: &str, app_name: &str, machine_name: &str, local_machine_id: 
         "root"
     ]);
 
-    machine_exec(key, app_name, machine_name, command)?;
+    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[run_lunatic] Failed to exec.  {}", e))?;
 
     Ok(())
 }
