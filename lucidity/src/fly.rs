@@ -26,8 +26,8 @@ pub fn ensure_machines(key: &str, count: usize) -> Result<(), String> {
             (key.to_owned(), app_name.to_owned(), machine_name, region.to_owned(), local_machine_id.to_owned()), |(key, app_name, machine_name, region, local_machine_id), 
             m: Protocol<Send<Result<(), String>, TaskEnd>>| {
             match ensure_machine(&key, &app_name, &machine_name, &region, &local_machine_id) {
-                Ok(_) => {
-                    let _ = m.send(Ok(()));
+                Ok(o) => {
+                    let _ = m.send(Ok(o));
                 },
                 Err(e) => {
                     let _ = m.send(Err(e));
@@ -39,8 +39,19 @@ pub fn ensure_machines(key: &str, count: usize) -> Result<(), String> {
     }
 
     // Wait for all of the processes to finish.
+    let mut results = Vec::new();
     for p in processes {
-        p.result()?;
+        results.push(p.result());
+    }
+
+    // Check for any errors.
+    for r in results {
+        match r {
+            Ok(_) => {},
+            Err(e) => {
+                return Err(e);
+            }
+        }
     }
     
     Ok(())
