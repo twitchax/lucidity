@@ -155,6 +155,10 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
                 {
                     "protocol": "udp",
                     "internal_port": 3031
+                },
+                {
+                    "protocol": "udp",
+                    "internal_port": 3000
                 }
             ],
         }
