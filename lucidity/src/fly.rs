@@ -142,17 +142,19 @@ fn delete_machine(key: &str, app_name: &str, machine_name: &str) -> Result<(), S
     let machine_id = machine_id_from_name(key, app_name, machine_name)?;
     let client = nightfly::Client::new();
 
+    // Swallow errors, as it is possible that the machine doesn't exist.
     let _ = client
         .post(format!("{}/apps/{}/machines/{}/stop", ENDPOINT, app_name, machine_id))
         .bearer_auth(key)
         .send()
-        .map_err(|e| format!("Failed to send request.  {}", e))?;
+        .map_err(|e| format!("Failed to send request.  {}", e));
 
+    // Swallow errors, as it is possible that the machine doesn't exist.
     let _ = client
         .delete(format!("{}/apps/{}/machines/{}", ENDPOINT, app_name, machine_id))
         .bearer_auth(key)
         .send()
-        .map_err(|e| format!("Failed to send request.  {}", e))?;
+        .map_err(|e| format!("Failed to send request.  {}", e));
 
     Ok(())
 }
