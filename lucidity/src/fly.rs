@@ -79,6 +79,7 @@ fn ensure_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
     Ok(())
 }
 
+/// List the currently running machines for the app.
 pub fn list_machines(key: &str, app_name: &str) -> Result<Vec<Value>, String> {
     let client = nightfly::Client::new();
 
@@ -108,29 +109,6 @@ fn machine_id_from_name(key: &str, app_name: &str, machine_name: &str) -> Result
 fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, local_machine_id: &str) -> Result<(), String> {
     let client = nightfly::Client::new();
 
-    // let body = json!({
-    //     "name": machine_name,
-    //     "region": region,
-    //     "config": {
-    //         "init": {
-    //             "exec": [
-    //                 "/bin/sleep",
-    //                 "inf"
-    //             ]
-    //         },
-    //         "image": "ubuntu",
-    //         "auto_destroy": true,
-    //         "restart": {
-    //             "policy": "always"
-    //         },
-    //         "guest": {
-    //             "cpu_kind": "shared",
-    //             "cpus": 1,
-    //             "memory_mb": 1024
-    //         }
-    //     }
-    // });
-
     let body = json!({
         "name": machine_name,
         "region": region,
@@ -153,23 +131,9 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
             },
             "services": [
                 {
-                    "ports": [
-                        {
-                            "port": 3031,
-                        },
-                    ],
                     "protocol": "udp",
                     "internal_port": 3031
                 },
-                {
-                    "ports": [
-                        {
-                            "port": 3000,
-                        },
-                    ],
-                    "protocol": "udp",
-                    "internal_port": 3000
-                }
             ],
         }
     });
@@ -224,6 +188,7 @@ fn machine_exec(key: &str, app_name: &str, machine_name: &str, command: Value) -
     Ok(())
 }
 
+#[allow(dead_code)]
 fn install_apt_deps(key: &str, app_name: &str, machine_name: &str) -> Result<(), String> {
     let command = json!([
         "su",
@@ -237,6 +202,7 @@ fn install_apt_deps(key: &str, app_name: &str, machine_name: &str) -> Result<(),
     Ok(())
 }
 
+#[allow(dead_code)]
 fn install_lunatic(key: &str, app_name: &str, machine_name: &str) -> Result<(), String> {
     let command = json!([
         "su",
@@ -259,6 +225,7 @@ fn install_lunatic(key: &str, app_name: &str, machine_name: &str) -> Result<(), 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn run_lunatic(key: &str, app_name: &str, machine_name: &str, local_machine_id: &str) -> Result<(), String> {
     let command = json!([
         "su",
@@ -272,6 +239,7 @@ fn run_lunatic(key: &str, app_name: &str, machine_name: &str, local_machine_id: 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn prepare_machine(key: &str, app_name: &str, machine_name: &str) -> Result<(), String> {
     install_apt_deps(key, app_name, machine_name)?;
     install_lunatic(key, app_name, machine_name)?;
