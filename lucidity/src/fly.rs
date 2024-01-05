@@ -79,7 +79,7 @@ fn ensure_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
     Ok(())
 }
 
-fn list_machines(key: &str, app_name: &str) -> Result<Vec<Value>, String> {
+pub fn list_machines(key: &str, app_name: &str) -> Result<Vec<Value>, String> {
     let client = nightfly::Client::new();
 
     let response = client
