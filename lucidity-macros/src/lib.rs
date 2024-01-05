@@ -224,6 +224,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
                 match value.parse::<u64>() {
                     Ok(v) => {
+                        println!("fuel: {}", v);
                         fuel = v;
                     },
                     Err(_) => panic!("Invalid attribute argument value `{}`.", value)
