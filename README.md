@@ -11,6 +11,52 @@
 
 A distributed orchestrator built upon [lunatic]().
 
+## Motivation
+
+Basically, `lunatic` by itself is a set of "low-level" runtime, syscalls, and language-wrappers.
+
+However, the `Process` architecture is a low-ish-level primitive, and is a bit hard to use when you want your code to be more readable.  So, I am building a layer in Rust with proc macros that can make code that looks like this.
+
+```rust
+fn main() {
+    let results = pythagorean_remote_fanout(vec![
+        (3, 4),
+        (4, 5),
+        (5, 6),
+        (6, 7),
+        (7, 8),
+        (8, 9),
+        (9, 10),
+    ]);
+
+    println!("result: {:#?}", results);
+}
+
+#[lucidity::job]
+fn pythagorean(a: u32, b: u32) -> f32 {
+    let num = ((square_remote_async(a).await_get() + square_remote_async(b).await_get()) as f32).sqrt();
+
+    num
+}
+
+#[lucidity::job]
+fn square(a: u32) -> u32 {
+    let num = a * a;
+
+    num
+}
+```
+
+For each method you place the proc macro on, it generates a few others.
+
+* `{name}_local`, when called, spawns the function in a _node local_ process, and blocks the calling process.
+* `{name}_remote`, when called, spawns the function in a process on a random _distributed node_, and blocks the calling process.
+* `{name}_local_async`, when called, spawns the function in a _node local_ process, handing back a wrapped reference to the process, which can be polled, or blocked upon.
+* `{name}_remote_async`, when called, spawns the function in a process on a random _distributed node_, handing back a wrapped reference to the process, which can be polled, or blocked upon.
+* `{name}_remote_async_fanout`, which takes a `Vec` of arg tuples and round-robin distributes calls to that function with those arguments, polling all of the processes, and blocking until all of completed with a `Vec` of the results.
+
+Basically, I want to make it eay to just annotate methods, and then call methods that "just work" in a distributed way.
+
 ## Library Usage
 
 Add this to your `Cargo.toml`:

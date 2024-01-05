@@ -92,7 +92,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
     let remote_fn_ident = Ident::new(&format!("{}_remote", name), name.span());
     let local_async_fn_ident = Ident::new(&format!("{}_local_async", name), name.span());
     let remote_async_fn_ident = Ident::new(&format!("{}_remote_async", name), name.span());
-    let remote_async_fanout_fn_ident = Ident::new(&format!("{}_remote_async_fanout", name), name.span());
+    let remote_fanout_fn_ident = Ident::new(&format!("{}_remote_fanout", name), name.span());
 
     let get_ident = Ident::new(&format!("{}_get", name), name.span());
     let set_ident = Ident::new(&format!("{}_set", name), name.span());
@@ -415,7 +415,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         /// The async get method retry interval is defined by `async_get_retry_interval_ms` (default 100ms).
         /// 
         /// The shutdown method retry interval is defined by `shutdown_retry_interval_ms` (default 100ms).
-        #vis fn #remote_async_fanout_fn_ident(args_list: Vec<#arguments_types_list>) -> Vec<#return_type> {
+        #vis fn #remote_fanout_fn_ident(args_list: Vec<#arguments_types_list>) -> Vec<#return_type> {
             use lucidity::lunatic::AbstractProcess;
             use lucidity::rand::seq::SliceRandom;
             
