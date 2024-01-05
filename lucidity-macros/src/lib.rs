@@ -133,6 +133,8 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut async_get_retry_interval_ms = 100;
     let mut async_set_retry_interval_ms = 100;
     let mut shutdown_retry_interval_ms = 100;
+    let mut memory = (1024 * 1024 * 1024) as u64;
+    let mut fuel = 1u64;
     let mut fanout = Literal::from_str("\"roundrobin\"").unwrap();
     for (key, value) in attr {
         let key = key.to_string();
@@ -205,6 +207,28 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
                     Err(_) => panic!("Invalid attribute argument value `{}`.", value)
                 }
             },
+            "memory" => {
+                let value = value.to_string();
+                let value = value.as_str();
+
+                match value.parse::<u64>() {
+                    Ok(v) => {
+                        memory = v;
+                    },
+                    Err(_) => panic!("Invalid attribute argument value `{}`.", value)
+                }
+            },
+            "fuel" => {
+                let value = value.to_string();
+                let value = value.as_str();
+
+                match value.parse::<u64>() {
+                    Ok(v) => {
+                        fuel = v;
+                    },
+                    Err(_) => panic!("Invalid attribute argument value `{}`.", value)
+                }
+            },
             "fanout" => {
                 let value = value.to_string();
                 let value = value.as_str();
@@ -222,8 +246,8 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         config.set_can_spawn_processes(true);
         config.set_can_create_configs(true);
         config.set_can_compile_modules(true);
-        config.set_max_fuel(u64::MAX);
-        config.set_max_memory(u64::MAX);
+        config.set_max_fuel(#fuel);
+        config.set_max_memory(#memory);
     };
 
     let service = quote! {
@@ -354,9 +378,9 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             // Get the result.
             let _ = loop {
-                println!("[{},{}] async_init > start", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
+                //println!("[{},{}] async_init > start", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                 if let Ok(r) = service.with_timeout(std::time::Duration::from_millis(#async_init_retry_interval_ms)).#async_init_ident(#call_arguments) {
-                    println!("[{},{}] async_init > end", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
+                    //println!("[{},{}] async_init > end", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                     break r;
                 }
             };
@@ -550,10 +574,10 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
                     let result = #name(#call_arguments);
 
                     loop {
-                        println!("[{},{}] set > start", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
+                        //println!("[{},{}] set > start", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
 
                         if let Ok(_) = parent.with_timeout(std::time::Duration::from_millis(#async_set_retry_interval_ms)).#set_ident(result) {
-                            println!("[{},{}] set > end", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
+                            //println!("[{},{}] set > end", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                             break;
                         }
                     }
@@ -597,13 +621,13 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
                 //println!("[{},{}] await_get_local", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                 
                 loop {
-                    println!("[{},{}] try_get_await > start", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
+                    //println!("[{},{}] try_get_await > start", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                     if let Ok(r) = self.0.process.with_timeout(std::time::Duration::from_millis(#async_get_retry_interval_ms)).#try_get_ident() {
                         if let Some(r) = r {
-                            println!("[{},{}] try_get_await > end", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
+                            //println!("[{},{}] try_get_await > end", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                             return r;
                         } else {
-                            println!("[{},{}] try_get_await > continue", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
+                            //println!("[{},{}] try_get_await > continue", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                             lucidity::lunatic::sleep(std::time::Duration::from_millis(#async_get_retry_interval_ms));
                         }
                     }
