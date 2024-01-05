@@ -224,7 +224,6 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
                 match value.parse::<u64>() {
                     Ok(v) => {
-                        println!("fuel: {}", v);
                         fuel = v;
                     },
                     Err(_) => panic!("Invalid attribute argument value `{}`.", value)
@@ -243,6 +242,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
     // Get some special quotes.
 
     let config = quote! {
+        println!("fuel: {}", #fuel);
         let mut config = lucidity::lunatic::ProcessConfig::new().unwrap();
         config.set_can_spawn_processes(true);
         config.set_can_create_configs(true);
