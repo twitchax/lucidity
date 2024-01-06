@@ -133,8 +133,8 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut async_get_retry_interval_ms = 100;
     let mut async_set_retry_interval_ms = 100;
     let mut shutdown_retry_interval_ms = 100;
-    let mut memory = (1024 * 1024 * 1024) as u64;
-    let mut fuel = 1u64;
+    let mut memory = 100u64 * 1024 * 1024 * 1024;
+    let mut fuel = 10u64;
     let mut fanout = Literal::from_str("\"roundrobin\"").unwrap();
     for (key, value) in attr {
         let key = key.to_string();
@@ -242,7 +242,6 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
     // Get some special quotes.
 
     let config = quote! {
-        println!("fuel: {}", #fuel);
         let mut config = lucidity::lunatic::ProcessConfig::new().unwrap();
         config.set_can_spawn_processes(true);
         config.set_can_create_configs(true);
