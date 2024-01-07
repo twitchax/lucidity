@@ -248,10 +248,8 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let service = quote! {
         let service = loop {
-            //println!("[{},{}] init > start", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
             match #service_name_ident::on_node(node).configure(&config).start_timeout((), std::time::Duration::from_millis(#init_retry_interval_ms)) {
                 Ok(s) => {
-                    //println!("[{},{}] init > end", lucidity::lunatic::host::node_id(), lucidity::lunatic::host::process_id());
                     break s;
                 },
                 Err(e) => match e {

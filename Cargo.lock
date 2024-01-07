@@ -411,7 +411,7 @@ dependencies = [
 name = "lucidity-core"
 version = "0.1.0"
 dependencies = [
- "lunatic 0.14.1",
+ "lunatic-twitchax-patch",
  "rand",
  "serde",
 ]
@@ -454,7 +454,7 @@ source = "git+https://github.com/twitchax/lunatic-rs#a9cf45198c5a75bed388f9f1c26
 dependencies = [
  "bincode",
  "lunatic-macros 0.13.0 (git+https://github.com/twitchax/lunatic-rs)",
- "lunatic-sys 0.14.0",
+ "lunatic-sys 0.14.0 (git+https://github.com/twitchax/lunatic-rs)",
  "lunatic-test 0.13.0 (git+https://github.com/twitchax/lunatic-rs)",
  "paste",
  "rustversion",
@@ -508,6 +508,12 @@ checksum = "20b8b9023c9664595f6cff816a711beec4e9f50d25ce6ed31eb2465a8232a435"
 [[package]]
 name = "lunatic-sys"
 version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d572d8b5fa4693714650d42566863cf218bb69119d5d8514129972ee00c75ada"
+
+[[package]]
+name = "lunatic-sys"
+version = "0.14.0"
 source = "git+https://github.com/twitchax/lunatic-rs#a9cf45198c5a75bed388f9f1c26b9dca931c724e"
 
 [[package]]
@@ -527,6 +533,22 @@ source = "git+https://github.com/twitchax/lunatic-rs#a9cf45198c5a75bed388f9f1c26
 dependencies = [
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "lunatic-twitchax-patch"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "502e2ebee49b5a250d89b8918ce490a52773da8a26ec661e45c6a19873820edd"
+dependencies = [
+ "bincode",
+ "lunatic-macros 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lunatic-sys 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lunatic-test 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "paste",
+ "rustversion",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]
