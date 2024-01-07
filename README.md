@@ -102,7 +102,7 @@ $ lunatic control --bind-socket [::]:3030
 And, on any other machines where you want the remote methods to run, you will need to set up nodes.
 
 ```bash
-$ lunatic node --bind-socket [::1]:3031 http://{IP_OR_HOST_OF_CONTROL}:3030/
+$ lunatic node --bind-socket [::]:3031 http://{IP_OR_HOST_OF_CONTROL}:3030/
 ```
 
 #### Local Testing
