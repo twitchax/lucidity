@@ -19,8 +19,8 @@ fly = []
 
 [dependencies]
 
-lucidity-core = { path = "../lucidity-core" }
-lucidity-macros = { path = "../lucidity-macros" }
+lucidity-core = { path = "../lucidity-core", version = "0.1.0" }
+lucidity-macros = { path = "../lucidity-macros", version = "0.1.0" }
 
 nightfly = { version = "0.1.6" }
 
