@@ -422,7 +422,7 @@ version = "0.1.0"
 dependencies = [
  "convert_case",
  "lucidity-core",
- "lunatic 0.14.1",
+ "lunatic-twitchax-patch",
  "pretty_assertions",
  "proc-macro2",
  "quote",
@@ -438,24 +438,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a81de8cce7e1b8185afdf1ebeef5bfce009b06f8d0b7527d3baddc7f81f0487"
 dependencies = [
  "bincode",
- "lunatic-macros 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lunatic-macros",
  "lunatic-sys 0.13.0",
- "lunatic-test 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "paste",
- "rustversion",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "lunatic"
-version = "0.14.1"
-source = "git+https://github.com/twitchax/lunatic-rs#a9cf45198c5a75bed388f9f1c26b9dca931c724e"
-dependencies = [
- "bincode",
- "lunatic-macros 0.13.0 (git+https://github.com/twitchax/lunatic-rs)",
- "lunatic-sys 0.14.0 (git+https://github.com/twitchax/lunatic-rs)",
- "lunatic-test 0.13.0 (git+https://github.com/twitchax/lunatic-rs)",
+ "lunatic-test",
  "paste",
  "rustversion",
  "serde",
@@ -469,7 +454,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac2236f0168dfb4ca227d25c5ed4de879a70fa4c3d11087b86fbc27d29144ce7"
 dependencies = [
  "chrono",
- "lunatic 0.13.1",
+ "lunatic",
  "serde",
  "yansi",
 ]
@@ -479,18 +464,6 @@ name = "lunatic-macros"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a7ddb2dbdcd909a3f9667b3616d7dc103eea47a641bca1d3bb6fe11b915b798"
-dependencies = [
- "convert_case",
- "darling",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "lunatic-macros"
-version = "0.13.0"
-source = "git+https://github.com/twitchax/lunatic-rs#a9cf45198c5a75bed388f9f1c26b9dca931c724e"
 dependencies = [
  "convert_case",
  "darling",
@@ -512,24 +485,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d572d8b5fa4693714650d42566863cf218bb69119d5d8514129972ee00c75ada"
 
 [[package]]
-name = "lunatic-sys"
-version = "0.14.0"
-source = "git+https://github.com/twitchax/lunatic-rs#a9cf45198c5a75bed388f9f1c26b9dca931c724e"
-
-[[package]]
 name = "lunatic-test"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31e0c9aa5a17dba90ef8685013d28589d54f04b028f9b3f58c3223e8bf00827d"
-dependencies = [
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "lunatic-test"
-version = "0.13.0"
-source = "git+https://github.com/twitchax/lunatic-rs#a9cf45198c5a75bed388f9f1c26b9dca931c724e"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -542,9 +501,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "502e2ebee49b5a250d89b8918ce490a52773da8a26ec661e45c6a19873820edd"
 dependencies = [
  "bincode",
- "lunatic-macros 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "lunatic-sys 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "lunatic-test 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lunatic-macros",
+ "lunatic-sys 0.14.0",
+ "lunatic-test",
  "paste",
  "rustversion",
  "serde",
@@ -589,7 +548,7 @@ dependencies = [
  "http-body",
  "httparse",
  "ipnet",
- "lunatic 0.13.1",
+ "lunatic",
  "lunatic-log",
  "mime",
  "percent-encoding",
