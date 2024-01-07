@@ -2,7 +2,7 @@
 
 ## Publish to Cargo
 
-Make sure `rtz` references the correct versions of `rtz-core` and `rtz-build` in `Cargo.toml`.
+Make sure `lucidity` references the correct versions of `lucidity-core` and `lucidity-macros` in `Cargo.toml`.
 
 ```bash
 $ cargo publish -p lucidity-core
