@@ -15,6 +15,5 @@ categories = ["orchestration"]
 
 [dependencies]
 lunatic = { git = "https://github.com/twitchax/lunatic-rs" }
-#lunatic-log = "0.4.0"
 serde = "1.0.193"
 rand = "0.8.5"

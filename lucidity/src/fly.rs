@@ -2,13 +2,16 @@
 
 use std::time::Duration;
 
-use lucidity_core::lunatic::{Process, protocol::{Protocol, Send, TaskEnd}};
+use lucidity_core::lunatic::{
+    protocol::{Protocol, Send, TaskEnd},
+    Process,
+};
 use serde_json::{json, Value};
 
 const ENDPOINT: &str = "https://api.machines.dev/v1";
 
 /// Ensures that the `lunatic` cluster is running on fly.io.
-/// 
+///
 /// This function takes the app name, region, and number of machines to run.
 /// It will delete any existing machines, create new ones, prepare them,
 /// and then run the `lunatic` process on them, connecting the node to the
@@ -23,17 +26,16 @@ pub fn ensure_machines(key: &str, count: usize) -> Result<(), String> {
     for k in 1..=count {
         let machine_name = format!("lucid-{}", k);
         let p = Process::spawn_link(
-            (key.to_owned(), app_name.to_owned(), machine_name, region.to_owned(), local_machine_id.to_owned()), |(key, app_name, machine_name, region, local_machine_id), 
-            m: Protocol<Send<Result<(), String>, TaskEnd>>| {
-            match ensure_machine(&key, &app_name, &machine_name, &region, &local_machine_id) {
+            (key.to_owned(), app_name.to_owned(), machine_name, region.to_owned(), local_machine_id.to_owned()),
+            |(key, app_name, machine_name, region, local_machine_id), m: Protocol<Send<Result<(), String>, TaskEnd>>| match ensure_machine(&key, &app_name, &machine_name, &region, &local_machine_id) {
                 Ok(o) => {
                     let _ = m.send(Ok(o));
-                },
+                }
                 Err(e) => {
                     let _ = m.send(Err(e));
                 }
-            }
-        });
+            },
+        );
 
         processes.push(p);
     }
@@ -47,13 +49,13 @@ pub fn ensure_machines(key: &str, count: usize) -> Result<(), String> {
     // Check for any errors.
     for r in results {
         match r {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => {
                 return Err(e);
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -62,19 +64,13 @@ fn ensure_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
     delete_machine(key, app_name, machine_name);
 
     // Wait for the machine to be deleted.
-    crate::lunatic::sleep(Duration::from_secs(30));
+    crate::lunatic::sleep(Duration::from_secs(10));
 
     // Create a new machine.
     create_machine(key, app_name, machine_name, region, local_machine_id).map_err(|e| format!("[ensure_machine] Failed to create machine.  {}", e))?;
 
     // Wait for the machine to be ready.
-    crate::lunatic::sleep(Duration::from_secs(30));
-
-    // Prepare the machine.
-    //prepare_machine(key, app_name, machine_name).map_err(|e| format!("[ensure_machine] Failed to prepare machine.  {}", e))?;
-
-    // Run the lunatic process.
-    //run_lunatic(key, app_name, machine_name, local_machine_id).map_err(|e| format!("[ensure_machine] Failed to run lunatic.  {}", e))?;
+    crate::lunatic::sleep(Duration::from_secs(10));
 
     Ok(())
 }
@@ -119,7 +115,7 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
                     format!("http://{}.vm.{}.internal:3030/", local_machine_id, app_name)
                 ]
             },
-            "image": "twitchax/lunatic",
+            "image": "twitchax/lunatic:2024.01.06",
             "auto_destroy": true,
             "restart": {
                 "policy": "always"
@@ -151,98 +147,14 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
 fn delete_machine(key: &str, app_name: &str, machine_name: &str) {
     let machine_id = match machine_id_from_name(key, app_name, machine_name) {
         Ok(o) => o,
-        Err(_) => return
+        Err(_) => return,
     };
 
     let client = nightfly::Client::new();
 
     // Swallow errors, as it is possible that the machine doesn't exist.
-    let _ = client
-        .post(format!("{}/apps/{}/machines/{}/stop", ENDPOINT, app_name, machine_id))
-        .bearer_auth(key)
-        .send();
+    let _ = client.post(format!("{}/apps/{}/machines/{}/stop", ENDPOINT, app_name, machine_id)).bearer_auth(key).send();
 
     // Swallow errors, as it is possible that the machine doesn't exist.
-    let _ = client
-        .delete(format!("{}/apps/{}/machines/{}", ENDPOINT, app_name, machine_id))
-        .bearer_auth(key)
-        .send();
-}
-
-fn machine_exec(key: &str, app_name: &str, machine_name: &str, command: Value) -> Result<(), String> {
-    let machine_id = machine_id_from_name(key, app_name, machine_name).map_err(|e| format!("[machine_exec] Failed to get machine id.  {}", e))?;
-    let client = nightfly::Client::new();
-
-    let body = json!({
-        "command": command,
-        "timeout": 60
-    });
-
-    let _ = client
-        .post(format!("{}/apps/{}/machines/{}/exec", ENDPOINT, app_name, machine_id))
-        .bearer_auth(key)
-        .json(body)
-        .send()
-        .map_err(|e| format!("[machine_exec] Failed to send request.  {}", e))?;
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-fn install_apt_deps(key: &str, app_name: &str, machine_name: &str) -> Result<(), String> {
-    let command = json!([
-        "su",
-        "-c",
-        "apt-get update && apt-get install -y curl sqlite3",
-        "root"
-    ]);
-
-    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[install_apt_deps] Failed to exec.  {}", e))?;
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-fn install_lunatic(key: &str, app_name: &str, machine_name: &str) -> Result<(), String> {
-    let command = json!([
-        "su",
-        "-c",
-        "curl -L -O https://github.com/lunatic-solutions/lunatic/releases/download/v0.13.2/lunatic-linux-amd64.tar.gz",
-        "root"
-    ]);
-
-    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[install_lunatic] Failed to exec download.  {}", e))?;
-
-    let command = json!([
-        "su",
-        "-c",
-        "tar -xzf lunatic-linux-amd64.tar.gz",
-        "root"
-    ]);
-
-    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[install_lunatic] Failed to exec untar.  {}", e))?;
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-fn run_lunatic(key: &str, app_name: &str, machine_name: &str, local_machine_id: &str) -> Result<(), String> {
-    let command = json!([
-        "su",
-        "-c",
-        format!("nohup /lunatic node --bind-socket [::]:3031 http://{}.vm.{}.internal:3030/ > /dev/console &", local_machine_id, app_name),
-        "root"
-    ]);
-
-    machine_exec(key, app_name, machine_name, command).map_err(|e| format!("[run_lunatic] Failed to exec.  {}", e))?;
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-fn prepare_machine(key: &str, app_name: &str, machine_name: &str) -> Result<(), String> {
-    install_apt_deps(key, app_name, machine_name)?;
-    install_lunatic(key, app_name, machine_name)?;
-
-    Ok(())
+    let _ = client.delete(format!("{}/apps/{}/machines/{}", ENDPOINT, app_name, machine_id)).bearer_auth(key).send();
 }

@@ -4,30 +4,32 @@
 
 use core::time::Duration;
 
-use lunatic::{AbstractProcess, ap::ProcessRef};
+use lunatic::{ap::ProcessRef, AbstractProcess};
 
 pub use lunatic;
-//pub use lunatic_log;
-pub use serde;
 pub use rand;
+pub use serde;
 
 /// A job is a process that can be spawned and shutdown.
-/// 
+///
 /// This type is usually created with the [`lucidity::job`] macro on the async methods.
-pub struct Job<T> where T: AbstractProcess {
+pub struct Job<T>
+where
+    T: AbstractProcess,
+{
     /// The process reference.
     pub process: ProcessRef<T>,
 }
 
-impl<T> Drop for Job<T> where T: AbstractProcess {
+impl<T> Drop for Job<T>
+where
+    T: AbstractProcess,
+{
     fn drop(&mut self) {
-        //use lunatic::host::{node_id, process_id};
-        //println!("[{},{}] drop", node_id(), process_id());
-
         loop {
             if let Ok(r) = self.process.with_timeout(Duration::from_millis(100)).shutdown() {
                 break r;
             }
-        } 
+        }
     }
 }
