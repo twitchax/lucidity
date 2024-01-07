@@ -17,7 +17,7 @@ proc-macro = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lucidity-core = { path = "../lucidity-core" }
+lucidity-core = { path = "../lucidity-core", version = "0.1.0" }
 
 pretty_assertions = "1.2.1"
 
@@ -26,6 +26,7 @@ syn = { version = "2.0.43", features = ["full"] }
 quote = "1.0.33"
 convert_case = "0.6.0"
 
-lunatic = { git = "https://github.com/twitchax/lunatic-rs" }
+#lunatic = { git = "https://github.com/twitchax/lunatic-rs" }
+lunatic = { package = "lunatic-twitchax-patch", version = "0.14.1" }
 serde = "1.0.193"
 rand = "0.8.5"

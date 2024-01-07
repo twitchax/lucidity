@@ -14,7 +14,7 @@ categories = ["orchestration"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#lunatic = { git = "https://github.com/twitchax/lunatic-rs", rev = "a9cf45198c5a75bed388f9f1c26b9dca931c724e" }
+#lunatic = { git = "https://github.com/twitchax/lunatic-rs" }
 lunatic = { package = "lunatic-twitchax-patch", version = "0.14.1" }
 serde = "1.0.193"
 rand = "0.8.5"
