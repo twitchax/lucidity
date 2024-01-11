@@ -64,13 +64,15 @@ fn ensure_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
     delete_machine(key, app_name, machine_name);
 
     // Wait for the machine to be deleted.
-    crate::lunatic::sleep(Duration::from_secs(10));
+    // TODO: Use events instead of sleeping.
+    crate::lunatic::sleep(Duration::from_secs(30));
 
     // Create a new machine.
     create_machine(key, app_name, machine_name, region, local_machine_id).map_err(|e| format!("[ensure_machine] Failed to create machine.  {}", e))?;
 
     // Wait for the machine to be ready.
-    crate::lunatic::sleep(Duration::from_secs(10));
+    // TODO: Use events instead of sleeping.
+    crate::lunatic::sleep(Duration::from_secs(30));
 
     Ok(())
 }
