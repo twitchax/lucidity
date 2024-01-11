@@ -115,7 +115,7 @@ fn create_machine(key: &str, app_name: &str, machine_name: &str, region: &str, l
                     format!("http://{}.vm.{}.internal:3030/", local_machine_id, app_name)
                 ]
             },
-            "image": "twitchax/lunatic:2024.01.06",
+            "image": "twitchax/lunatic:2024.01.10",
             "auto_destroy": true,
             "restart": {
                 "policy": "always"
