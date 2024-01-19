@@ -541,7 +541,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             #[handle_request]
             fn #try_get_ident(&self) -> #option_return_type {
-                self.0
+                self.0.clone()
             }
 
             #[handle_request]
