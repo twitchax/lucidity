@@ -66,6 +66,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Get argument helpers for `quote!`.
 
+    let closure_arguments = quote! { #(#arguments_names),* };
     let call_arguments = quote! { #(#arguments_cloned_names),* };
     let arguments_types_list = if arguments.is_empty() {
         quote! { () }
@@ -549,7 +550,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
                 #config
 
-                let _ = lucidity::lunatic::Process::spawn_link_config(&config, (parent, #call_arguments), |(parent, #call_arguments), _: lucidity::lunatic::Mailbox<()>| {
+                let _ = lucidity::lunatic::Process::spawn_link_config(&config, (parent, #call_arguments), |(parent, #closure_arguments), _: lucidity::lunatic::Mailbox<()>| {
 
                     let result = #name(#call_arguments);
 
