@@ -555,7 +555,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
                     let result = #name(#call_arguments);
 
                     loop {
-                        if let Ok(_) = parent.with_timeout(std::time::Duration::from_millis(#async_set_retry_interval_ms)).#set_ident(result) {
+                        if let Ok(_) = parent.with_timeout(std::time::Duration::from_millis(#async_set_retry_interval_ms)).#set_ident(result.clone()) {
                             break;
                         }
                     }
