@@ -79,11 +79,11 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
     let arguments_args_tuple = if arguments.is_empty() {
         quote! {}
     } else if arguments.len() == 1 {
-        quote! { args }
+        quote! { args.clone() }
     } else {
         let a = arguments.iter().enumerate().map(|(k, _)| {
             let s = Literal::usize_unsuffixed(k);
-            quote! { args.#s }
+            quote! { args.#s.clone() }
         });
 
         quote! { #(#a),* }
