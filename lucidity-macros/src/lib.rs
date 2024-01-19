@@ -50,7 +50,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         syn::FnArg::Typed(pat_type) => match &*pat_type.pat {
             syn::Pat::Ident(ident) => {
                 let name = &ident.ident;
-                quote! { #name: #name.clone() }
+                quote! { #name.clone() }
             }
             _ => panic!("Invalid argument pattern."),
         },
