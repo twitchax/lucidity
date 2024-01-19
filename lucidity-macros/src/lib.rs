@@ -46,6 +46,16 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         },
         _ => panic!("Invalid argument pattern."),
     });
+    let arguments_cloned_names = arguments.iter().map(|arg| match arg {
+        syn::FnArg::Typed(pat_type) => match &*pat_type.pat {
+            syn::Pat::Ident(ident) => {
+                let name = &ident.ident;
+                quote! { #name: #name.clone() }
+            }
+            _ => panic!("Invalid argument pattern."),
+        },
+        _ => panic!("Invalid argument pattern."),
+    });
     let arguments_types = arguments.iter().map(|arg| match arg {
         syn::FnArg::Typed(pat_type) => {
             let ty = &pat_type.ty;
@@ -56,7 +66,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Get argument helpers for `quote!`.
 
-    let call_arguments = quote! { #(#arguments_names),* };
+    let call_arguments = quote! { #(#arguments_cloned_names),* };
     let arguments_types_list = if arguments.is_empty() {
         quote! { () }
     } else if arguments.len() == 1 {

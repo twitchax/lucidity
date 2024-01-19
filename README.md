@@ -119,9 +119,6 @@ In a more production setup, you would probably use something like `fly.io` to de
 to build and run your code in a container.  The easiest way is a simple docker container that runs the control node, and the application
 node.  Your entry point would look something like this.
 
-> NOTE: Due to UDP issues on fly.io, the "automatic" fly.io setup feature does not work, but will be enabled when I get the issues
-> resolved.
-
 ```bash
 #!bin/bash
 
@@ -364,8 +361,6 @@ Generally, this do not need to be used, but they are available if you need them.
 * `fly`: This enables the `fly` feature, which allows you to use the `fly.io` platform to automatically set up nodes
   from the main `lunatic` node.  This is not enabled by default, as it requires a `fly.io` account, and a bit of setup.
   See the `fly.io` documentation for more information.
-  > NOTE: This functionality is also (currently) rendered useless by limitations with UDP on `fly.io`.  I am working with
-  > the `fly.io` team in the forums to resolve this issue.
 
 ## Test
 
