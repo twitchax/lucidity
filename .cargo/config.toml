@@ -1,0 +1,3 @@
+# Guest code runs on the sibling `lunatic` runtime fork (`cargo build --release` there first).
+[target.wasm32-wasip1]
+runner = "../lunatic/target/release/lunatic run"

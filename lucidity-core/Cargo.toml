@@ -6,7 +6,6 @@ authors = ["Aaron Roney <twitchax@gmail.com>"]
 license = "MIT"
 description = "A distributed orchestrator platform for Rust."
 readme = "../README.md"
-homepage = "https://github.com/twitchax/lucidity"
 repository = "https://github.com/twitchax/lucidity"
 keywords = ["lucidity", "orchestrator", "distributed", "macro"]
 categories = ["orchestration"]
@@ -14,7 +13,6 @@ categories = ["orchestration"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#lunatic = { git = "https://github.com/twitchax/lunatic-rs" }
-lunatic = { package = "lunatic-twitchax-patch", version = "0.14.1" }
-serde = "1.0.193"
-rand = "0.8.5"
+lunatic = { workspace = true }
+serde = { workspace = true }
+rand = "0.10.3"

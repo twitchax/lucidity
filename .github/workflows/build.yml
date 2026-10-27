@@ -2,33 +2,52 @@ on: [push]
 
 name: Build and Test
 
+# `lunatic-rs` is a path dependency on a sibling checkout, so every job lays the repos out side by side.
+# TODO: Move the `lunatic-rs` ref to `main` once the `upgrade` branch lands there.
+
 jobs:
 
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
         with:
-          toolchain: nightly
-          override: true
+          path: lucidity
+      - uses: actions/checkout@v4
+        with:
+          repository: twitchax/lunatic-rs
+          ref: upgrade
+          path: lunatic-rs
+      - name: Install toolchain
+        working-directory: lucidity
+        run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
         with:
-          command: build
+          workspaces: lucidity
+      - name: Build
+        working-directory: lucidity
+        # The `fly` feature is left out: `nightfly` pulls in `stdweb`, which no longer compiles.
+        run: cargo build --target wasm32-wasip1 --lib --examples
 
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
         with:
-          toolchain: nightly
-          override: true
+          path: lucidity
+      - uses: actions/checkout@v4
+        with:
+          repository: twitchax/lunatic-rs
+          ref: upgrade
+          path: lunatic-rs
+      - name: Install toolchain
+        working-directory: lucidity
+        run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: -p lucidity-macros
+          workspaces: lucidity
+      - name: Test
+        working-directory: lucidity
+        run: cargo test -p lucidity-macros

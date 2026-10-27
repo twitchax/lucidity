@@ -6,7 +6,6 @@ authors = ["Aaron Roney <twitchax@gmail.com>"]
 license = "MIT"
 description = "A distributed orchestrator platform for Rust."
 readme = "../README.md"
-homepage = "https://github.com/twitchax/lucidity"
 repository = "https://github.com/twitchax/lucidity"
 keywords = ["lucidity", "orchestrator", "distributed", "macro"]
 categories = ["orchestration"]
@@ -15,13 +14,18 @@ categories = ["orchestration"]
 
 [features]
 default = []
-fly = []
+fly = ["dep:nightfly", "dep:serde_json"]
 
 [dependencies]
 
 lucidity-core = { path = "../lucidity-core", version = "0.1.0" }
 lucidity-macros = { path = "../lucidity-macros", version = "0.1.0" }
 
-nightfly = { version = "0.1.6" }
+nightfly = { version = "0.1.6", optional = true }
 
-serde_json = "1.0.110"
+serde_json = { version = "1.0.154", optional = true }
+
+# `lunatic::abstract_process` (used by `lucidity::job`) expands to bare `lunatic::` and `serde::` paths.
+[dev-dependencies]
+lunatic = { workspace = true }
+serde = { workspace = true }

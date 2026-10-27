@@ -82,9 +82,9 @@ In your `.cargo/config.toml`:
 
 ```toml
 [build]
-target = "wasm32-wasi"
+target = "wasm32-wasip1"
 
-[target.wasm32-wasi]
+[target.wasm32-wasip1]
 runner = "lunatic run"
 ```
 

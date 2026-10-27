@@ -328,10 +328,10 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         /// The service process is `shutdown` before completion of this call.
         #vis fn #remote_fn_ident(#arguments) -> #return_type {
             use lucidity::lunatic::AbstractProcess;
-            use lucidity::rand::seq::SliceRandom;
+            use lucidity::rand::seq::IndexedRandom;
 
             let nodes = lucidity::lunatic::distributed::nodes();
-            let node = *nodes.choose(&mut lucidity::rand::thread_rng()).unwrap();
+            let node = *nodes.choose(&mut lucidity::rand::rng()).unwrap();
 
             #config
 
@@ -397,10 +397,10 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         /// The spawned service process is `shutdown` when the returned [`Job`] is dropped.
         #vis fn #remote_async_fn_ident(#arguments) -> #job_name_ident {
             use lucidity::lunatic::AbstractProcess;
-            use lucidity::rand::seq::SliceRandom;
+            use lucidity::rand::seq::IndexedRandom;
 
             let nodes = lucidity::lunatic::distributed::nodes();
-            let node = *nodes.choose(&mut lucidity::rand::thread_rng()).unwrap();
+            let node = *nodes.choose(&mut lucidity::rand::rng()).unwrap();
 
             #config
 
@@ -434,14 +434,14 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         /// The shutdown method retry interval is defined by `shutdown_retry_interval_ms` (default 100ms).
         #vis fn #remote_fanout_fn_ident(args_list: Vec<#arguments_types_list>) -> Vec<#return_type> {
             use lucidity::lunatic::AbstractProcess;
-            use lucidity::rand::seq::SliceRandom;
+            use lucidity::rand::seq::IndexedRandom;
 
             #config
 
             let mut services = Vec::new();
             let nodes = lucidity::lunatic::distributed::nodes();
 
-            let random = &mut lucidity::rand::thread_rng();
+            let random = &mut lucidity::rand::rng();
 
             for (k, args) in args_list.into_iter().enumerate() {
                 let node = if #fanout == "roundrobin" {
