@@ -21,6 +21,7 @@ fly = ["dep:nightfly", "dep:serde_json"]
 lucidity-core = { path = "../lucidity-core", version = "0.2.0" }
 lucidity-macros = { path = "../lucidity-macros", version = "0.2.0" }
 
-nightfly = { version = "0.1.6", optional = true }
+# Without the default `cookies` feature, which pulls in `stdweb` (through `time` 0.2), and that no longer compiles.
+nightfly = { version = "0.1.6", optional = true, default-features = false }
 
 serde_json = { version = "1.0.154", optional = true }

@@ -28,8 +28,7 @@ jobs:
           workspaces: lucidity
       - name: Build
         working-directory: lucidity
-        # The `fly` feature is left out: `nightfly` pulls in `stdweb`, which no longer compiles.
-        run: cargo build --target wasm32-wasip1 --lib --examples
+        run: cargo build --target wasm32-wasip1 --lib --examples --all-features
 
   test:
     name: Test
