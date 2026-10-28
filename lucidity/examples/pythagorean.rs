@@ -22,7 +22,7 @@ fn main() {
     assert_eq!(pythagorean_local(3, 4), 5.0);
     println!("local: ok");
 
-    if lucidity::lunatic::distributed::nodes().is_empty() {
+    if lucidity::remote_nodes().is_empty() {
         println!("remote: skipped (no peer nodes)");
         return;
     }

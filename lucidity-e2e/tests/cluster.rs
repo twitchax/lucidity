@@ -47,6 +47,22 @@ fn a_dead_job_panics_its_caller() {
     assert!(!cluster.log("app").contains("unreachable: "), "{}", cluster.dump());
 }
 
+#[test]
+fn a_job_whose_node_goes_down_panics_its_caller() {
+    let wasm = example("node_dies");
+    let mut cluster = Cluster::start(1);
+    cluster.spawn_node("app", Some(&wasm));
+
+    cluster.wait_for_any("peer1", &["lingering on node"], Duration::from_secs(60));
+    cluster.kill("peer1");
+
+    // The control node drops a silent node within its lease, and the app's node then fails the job.
+    cluster.wait_for_any("app", &["job `linger` on node", "unreachable: "], Duration::from_secs(30));
+
+    assert!(cluster.log("app").contains("was lost: its node went down"), "{}", cluster.dump());
+    assert!(!cluster.log("app").contains("unreachable: "), "{}", cluster.dump());
+}
+
 /// A control node and its nodes, each logging to a file in a temporary directory, killed on drop.
 struct Cluster {
     dir: TempDir,
@@ -102,6 +118,13 @@ impl Cluster {
             .unwrap();
 
         self.nodes.push((name.to_owned(), child));
+    }
+
+    /// Kills `name` outright, as a crash would.
+    fn kill(&mut self, name: &str) {
+        let (_, child) = self.nodes.iter_mut().find(|(node, _)| node == name).unwrap();
+        child.kill().unwrap();
+        child.wait().unwrap();
     }
 
     fn log_path(&self, name: &str) -> PathBuf {

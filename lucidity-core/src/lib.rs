@@ -4,7 +4,7 @@
 
 use std::{cell::RefCell, time::Duration};
 
-use lunatic::{LinkDiedSignal, Mailbox, MessageSignal, Process, ProcessConfig, Tag};
+use lunatic::{LinkDiedSignal, Mailbox, MessageSignal, Process, ProcessConfig, ProcessDiedSignal, Tag};
 use rand::RngExt;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
@@ -39,12 +39,28 @@ pub enum Fanout {
     Random,
 }
 
-/// What a watcher reports back to the caller.
+/// What the caller gets back.
 type Outcome<T> = Result<T, Failed>;
 
-/// The job's process died before producing a result.
+/// Why a job produced no result.
 #[derive(Serialize, Deserialize)]
-struct Failed;
+enum Failed {
+    /// The job's process died.
+    Died,
+    /// The job's watcher died, which in practice means that its node went down.
+    Lost,
+}
+
+/// What a relay receives.
+#[derive(Serialize, Deserialize)]
+enum Relay<T> {
+    /// The job's watcher, from the caller.
+    Watch(Process<Watch<T>>),
+    /// The job's outcome, from its watcher.
+    Report(Outcome<T>),
+    /// The caller dropped the job before it finished.
+    Cancel,
+}
 
 /// What a watcher receives.
 #[derive(Serialize, Deserialize)]
@@ -61,14 +77,17 @@ enum State<T> {
 /// A job running in its own process, possibly on another node.
 ///
 /// A job is spawned as a small watcher process on the target node, which spawns the job's process linked to itself
-/// on that same node (links don't cross nodes) and reports exactly one outcome back to the caller's mailbox, under
-/// a tag unique to this job: the result, or that the job's process died.  The caller never polls or retries, so a
-/// slow job is only ever slow, and a dead one panics the caller instead of hanging it.
+/// on that same node (links don't cross nodes), and reports exactly one outcome: the result, or that the job's process
+/// died.  The report goes to a relay process on the caller's node, which monitors the watcher (monitors do cross
+/// nodes), and forwards the report to the caller's mailbox under a tag unique to this job, or reports the job lost if
+/// the watcher dies first, which happens when its node goes down.  The relay keeps the monitor's signals out of the
+/// caller's mailbox.  The caller never polls or retries, so a slow job is only ever slow, and a dead or lost one
+/// panics the caller instead of hanging it.
 ///
 /// Dropping a job before its result arrives cancels it.
 pub struct Job<J: JobFn> {
     node: u64,
-    watcher: Process<Watch<J::Output>>,
+    relay: Process<Relay<J::Output>>,
     tag: Tag,
     state: RefCell<State<J::Output>>,
 }
@@ -79,11 +98,16 @@ impl<J: JobFn> Job<J> {
         let tag = Tag::new();
         // SAFETY: only `Outcome<J::Output>` messages are ever sent under `tag`, and they're only received as such.
         let caller = unsafe { Process::<Outcome<J::Output>>::this() };
-        let watcher = Process::spawn_node_config(node, &config::<J>(), (caller, tag, args), watch::<J>);
+        // Linked, so that the relay doesn't outlive a caller that dies, e.g. because `node` is gone and spawning the
+        // watcher there panics.  The watcher is spawned here, rather than by the relay, so that this panic happens in
+        // the caller.
+        let relay = Process::spawn_link((caller, tag), relay::<J>);
+        let watcher = Process::spawn_node_config(node, &config::<J>(), (relay, args), watch::<J>);
+        relay.send(Relay::Watch(watcher));
 
         Self {
             node,
-            watcher,
+            relay,
             tag,
             state: RefCell::new(State::Pending),
         }
@@ -91,7 +115,7 @@ impl<J: JobFn> Job<J> {
 
     /// Returns the result if the job has finished, without blocking.
     ///
-    /// Panics if the job's process died.
+    /// Panics if the job's process died, or if its node went down.
     pub fn try_get(&self) -> Option<J::Output> {
         self.receive(Some(Duration::ZERO));
 
@@ -103,7 +127,7 @@ impl<J: JobFn> Job<J> {
 
     /// Blocks until the job finishes, and returns its result.
     ///
-    /// Panics if the job's process died.
+    /// Panics if the job's process died, or if its node went down.
     pub fn await_get(&self) -> J::Output {
         self.receive(None);
 
@@ -131,7 +155,8 @@ impl<J: JobFn> Job<J> {
 
         match outcome {
             Ok(output) => *self.state.borrow_mut() = State::Done(output),
-            Err(Failed) => panic!("lucidity: job `{}` on node {} died before returning a result", J::NAME, self.node),
+            Err(Failed::Died) => panic!("lucidity: job `{}` on node {} died before returning a result", J::NAME, self.node),
+            Err(Failed::Lost) => panic!("lucidity: job `{}` on node {} was lost: its node went down before it returned a result", J::NAME, self.node),
         }
     }
 }
@@ -139,17 +164,18 @@ impl<J: JobFn> Job<J> {
 impl<J: JobFn> Drop for Job<J> {
     fn drop(&mut self) {
         if let State::Pending = *self.state.borrow() {
-            // The watcher may have just exited after sending the outcome; the message is then dropped.
-            self.watcher.send(Watch::Cancel);
+            // The relay may have just exited after forwarding the outcome; the message is then dropped.
+            self.relay.send(Relay::Cancel);
         }
     }
 }
 
 /// Spawns one job per set of arguments, on nodes picked by `fanout`, and blocks until all of them finish.
 ///
-/// The results are in the same order as the arguments.  Panics if any job's process died.
+/// The results are in the same order as the arguments.  Panics if any job's process died, or if any job's node went
+/// down, or if no other nodes are connected.
 pub fn fanout<J: JobFn>(args: Vec<J::Args>, fanout: Fanout) -> Vec<J::Output> {
-    let nodes = remote_nodes();
+    let nodes = connected_remote_nodes();
 
     let jobs = args
         .into_iter()
@@ -172,15 +198,21 @@ pub fn local_node() -> u64 {
     lunatic::host::node_id()
 }
 
-/// A random node from the distributed pool.
+/// A random node from the distributed pool, other than this one.
 ///
 /// Panics if no other nodes are connected.
 pub fn random_node() -> u64 {
-    pick(&remote_nodes())
+    pick(&connected_remote_nodes())
 }
 
-fn remote_nodes() -> Vec<u64> {
-    let nodes = lunatic::distributed::nodes();
+/// The nodes in the distributed pool, other than this one: where `remote` jobs run.
+pub fn remote_nodes() -> Vec<u64> {
+    let local = local_node();
+    lunatic::distributed::nodes().into_iter().filter(|&node| node != local).collect()
+}
+
+fn connected_remote_nodes() -> Vec<u64> {
+    let nodes = remote_nodes();
     assert!(!nodes.is_empty(), "lucidity: no remote nodes are connected");
     nodes
 }
@@ -202,15 +234,41 @@ fn config<J: JobFn>() -> ProcessConfig {
     config
 }
 
-// Runs on the job's node: spawns the job linked to itself, and forwards one outcome to the caller.
-fn watch<J: JobFn>((caller, tag, args): (Process<Outcome<J::Output>>, Tag, J::Args), mailbox: Mailbox<Watch<J::Output>>) {
+// Runs on the caller's node: forwards the watcher's report to the caller, or reports the job lost if the watcher dies
+// without one.  The watcher's death can't overtake its report, since a monitor's signal arrives after every message
+// the monitored process sent.
+fn relay<J: JobFn>((caller, tag): (Process<Outcome<J::Output>>, Tag), mailbox: Mailbox<Relay<J::Output>>) {
+    let mailbox = mailbox.monitorable();
+    let mut watcher = None;
+
+    loop {
+        match mailbox.receive() {
+            MessageSignal::Message(Relay::Watch(process)) => {
+                mailbox.monitor(process);
+                watcher = Some(process);
+            }
+            MessageSignal::Message(Relay::Report(outcome)) => return caller.tag_send(tag, outcome),
+            MessageSignal::Message(Relay::Cancel) => {
+                // The caller sends the watcher before it can cancel, so it's always known here.
+                if let Some(watcher) = watcher {
+                    watcher.send(Watch::Cancel);
+                }
+                return;
+            }
+            MessageSignal::Signal(ProcessDiedSignal(_)) => return caller.tag_send(tag, Err(Failed::Lost)),
+        }
+    }
+}
+
+// Runs on the job's node: spawns the job linked to itself, and reports one outcome to the relay.
+fn watch<J: JobFn>((relay, args): (Process<Relay<J::Output>>, J::Args), mailbox: Mailbox<Watch<J::Output>>) {
     let mailbox = mailbox.catch_link_failure();
     let job = Process::spawn_link_config(&config::<J>(), (mailbox.this(), args), run::<J>);
 
     match mailbox.receive() {
-        MessageSignal::Message(Watch::Done(output)) => caller.tag_send(tag, Ok(output)),
+        MessageSignal::Message(Watch::Done(output)) => relay.send(Relay::Report(Ok(output))),
         MessageSignal::Message(Watch::Cancel) => job.kill(),
-        MessageSignal::Signal(LinkDiedSignal(_)) => caller.tag_send(tag, Err(Failed)),
+        MessageSignal::Signal(LinkDiedSignal(_)) => relay.send(Relay::Report(Err(Failed::Died))),
     }
 }
 

@@ -63,9 +63,12 @@ boilerplate required to successfully write the distributed code.  Setting up the
 The tradeoff is that this library is opinionated about how you write your code, and what you can do with it (open to suggestions, though).
 
 Under the hood, each job is spawned as a small watcher `Process` on the target node, which spawns the job linked to itself, and
-sends exactly one message back: the result, or that the job's `Process` died.  Nothing polls or retries, so a slow job is only slow,
-and a job that dies (panics, traps, runs out of memory or fuel) panics the caller instead of hanging it.  Dropping a `Job` before it
-finishes cancels it.  If the target _node_ itself goes away, the caller currently waits forever.
+sends exactly one message back: the result, or that the job's `Process` died.  That message goes through a relay `Process` on the
+caller's node, which monitors the watcher, so if the target _node_ goes down, the relay reports the job lost instead.  Nothing polls
+or retries, so a slow job is only slow, and a job that dies (panics, traps, runs out of memory or fuel), or whose node goes down,
+panics the caller instead of hanging it.  Dropping a `Job` before it finishes cancels it.
+
+The `remote` functions never pick the calling node; `lucidity::remote_nodes()` lists the nodes they can pick.
 
 ## Library Usage
 

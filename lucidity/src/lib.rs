@@ -2,7 +2,7 @@
 //#![doc = include_str!("../../README.md")]
 #![warn(rustdoc::broken_intra_doc_links, rust_2018_idioms, clippy::all, missing_docs)]
 
-pub use lucidity_core::{fanout, local_node, random_node, Fanout, Job, JobFn};
+pub use lucidity_core::{fanout, local_node, random_node, remote_nodes, Fanout, Job, JobFn};
 pub use lucidity_macros::job;
 
 pub use lucidity_core::lunatic;
