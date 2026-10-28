@@ -21,6 +21,13 @@ $ cargo build --target wasm32-wasip1 --example <name>
 Jobs spawn through the distributed API, so guest code runs inside a `lunatic node` registered with a control node
 (see `lucidity/examples/pythagorean.rs` for the commands), not under `cargo run` / `lunatic run`.
 
+## Test
+
+```bash
+$ cargo test -p lucidity-macros   # macro expansion
+$ cargo test -p lucidity-e2e      # the examples on a real local cluster (needs the runtime built, or `LUNATIC_BIN`)
+```
+
 ## Publish to Cargo
 
 Make sure `lucidity` references the correct versions of `lucidity-core` and `lucidity-macros` in `Cargo.toml`.  The `lunatic` path dependency needs a published crate (and `version`) before publishing.

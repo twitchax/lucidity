@@ -1,5 +1,5 @@
 [workspace]
-members = ["lucidity-core", "lucidity-macros", "lucidity"]
+members = ["lucidity-core", "lucidity-macros", "lucidity", "lucidity-e2e"]
 resolver = "2"
 
 # `lunatic-rs` and `lunatic` (the runtime) are developed as forks checked out next to this repo.

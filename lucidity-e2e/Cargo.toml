@@ -1,0 +1,9 @@
+[package]
+name = "lucidity-e2e"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "End-to-end tests: lucidity examples on a real local lunatic cluster."
+
+[dev-dependencies]
+tempfile = "3.27.0"

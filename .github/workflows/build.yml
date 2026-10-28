@@ -2,8 +2,9 @@ on: [push]
 
 name: Build and Test
 
-# `lunatic-rs` is a path dependency on a sibling checkout, so every job lays the repos out side by side.
-# TODO: Move the `lunatic-rs` ref to `main` once the `upgrade` branch lands there.
+# `lunatic-rs` is a path dependency on a sibling checkout (and the e2e tests run on a sibling `lunatic`), so every job
+# lays the repos out side by side.
+# TODO: Move the `lunatic-rs` and `lunatic` refs to `main` once the `upgrade` branches land there.
 
 jobs:
 
@@ -51,3 +52,36 @@ jobs:
       - name: Test
         working-directory: lucidity
         run: cargo test -p lucidity-macros
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: lucidity
+      - uses: actions/checkout@v4
+        with:
+          repository: twitchax/lunatic-rs
+          ref: upgrade
+          path: lunatic-rs
+      - uses: actions/checkout@v4
+        with:
+          repository: twitchax/lunatic
+          ref: upgrade
+          path: lunatic
+      - name: Install toolchains
+        run: |
+          rustup toolchain install stable --profile minimal
+          (cd lucidity && rustup toolchain install)
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            lunatic
+            lucidity
+      - name: Build the runtime
+        working-directory: lunatic
+        run: cargo +stable build --release
+      - name: Test
+        working-directory: lucidity
+        run: cargo test -p lucidity-e2e
