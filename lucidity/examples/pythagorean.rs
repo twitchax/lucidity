@@ -1,8 +1,12 @@
 //! Runs every generated job flavor and checks the results.
 //!
-//! Every flavor (even `_local`) spawns through the distributed API, so this must run inside a `lunatic node`
-//! registered with a control node, not under a plain `lunatic run`.  The remote flavors are skipped when no
-//! peer nodes are connected.
+//! The local flavors run anywhere; the remote flavors are skipped when no other nodes are connected:
+//!
+//! ```bash
+//! cargo run --target wasm32-wasip1 --example pythagorean
+//! ```
+//!
+//! To run the remote flavors too, run it inside a `lunatic node` registered with a control node that has peers:
 //!
 //! ```bash
 //! cargo build --target wasm32-wasip1 --example pythagorean

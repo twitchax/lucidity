@@ -15,6 +15,10 @@ use std::{
 
 use tempfile::TempDir;
 
+mod common;
+
+use common::{example, lunatic};
+
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(20);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 const LOG_TAIL_LINES: usize = 80;
@@ -149,31 +153,6 @@ impl Drop for Cluster {
             let _ = child.wait();
         }
     }
-}
-
-fn workspace_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf()
-}
-
-fn lunatic() -> PathBuf {
-    let bin = std::env::var_os("LUNATIC_BIN").map_or_else(|| workspace_root().join("../lunatic/target/release/lunatic"), PathBuf::from);
-    assert!(bin.is_file(), "no lunatic runtime at {}: run `cargo build --release` in ../lunatic, or set LUNATIC_BIN", bin.display());
-
-    bin
-}
-
-/// Builds an example of the `lucidity` crate for wasm, in its own target directory so it doesn't wait on this build.
-fn example(name: &str) -> PathBuf {
-    let target_dir = workspace_root().join("target/e2e");
-    let status = Command::new(env!("CARGO"))
-        .current_dir(workspace_root())
-        .args(["build", "--target", "wasm32-wasip1", "-p", "lucidity", "--example", name, "--target-dir"])
-        .arg(&target_dir)
-        .status()
-        .unwrap();
-    assert!(status.success(), "building example `{name}` failed");
-
-    target_dir.join(format!("wasm32-wasip1/debug/examples/{name}.wasm"))
 }
 
 fn free_tcp_port() -> u16 {

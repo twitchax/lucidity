@@ -1,6 +1,6 @@
 //! A job whose process dies (here, by running out of fuel) panics its caller instead of hanging it.
 //!
-//! Run it inside a `lunatic node` like `pythagorean`; it should panic with "job `spin` on node ... died".
+//! `cargo run --target wasm32-wasip1 --example job_dies` should panic with "job `spin` on node ... died".
 
 fn main() {
     println!("spinning");

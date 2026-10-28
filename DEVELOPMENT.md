@@ -15,11 +15,11 @@ Build the runtime once (and after any runtime change) before running guest code:
 
 ```bash
 $ (cd ../lunatic && cargo build --release)
-$ cargo build --target wasm32-wasip1 --example <name>
+$ cargo run --target wasm32-wasip1 --example <name>
 ```
 
-Jobs spawn through the distributed API, so guest code runs inside a `lunatic node` registered with a control node
-(see `lucidity/examples/pythagorean.rs` for the commands), not under `cargo run` / `lunatic run`.
+`cargo run` (a plain `lunatic run`) is enough for local jobs.  Remote jobs need the code to run inside a `lunatic node`
+registered with a control node that has peers (see `lucidity/examples/pythagorean.rs` for the commands).
 
 ## Test
 
