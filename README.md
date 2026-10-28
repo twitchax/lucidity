@@ -54,14 +54,18 @@ For each method you place the proc macro (`lucidity::job`) on, we generate a few
 
 * `{name}_local`, when called, spawns the function in a _node local_ `Process`, and blocks the calling `Process`.
 * `{name}_remote`, when called, spawns the function in a `Process` on a random _distributed node_, and blocks the calling `Process`.
-* `{name}_local_async`, when called, spawns the function in a _node local_ `Process`, handing back a wrapped reference to the `Process`, which can be polled, or blocked upon.
-* `{name}_remote_async`, when called, spawns the function in a `Process` on a random _distributed node_, handing back a wrapped reference to the `Process`, which can be polled, or blocked upon.
+* `{name}_local_async`, when called, spawns the function in a _node local_ `Process`, handing back a `lucidity::Job`, which can be checked (`try_get`), or blocked upon (`await_get`).
+* `{name}_remote_async`, when called, spawns the function in a `Process` on a random _distributed node_, handing back a `lucidity::Job`, which can be checked (`try_get`), or blocked upon (`await_get`).
 * `{name}_remote_fanout`, which takes a `Vec` of arg tuples and roundrobin distributes calls to that function with those arguments, polling all of the `Process`es, and blocking until all are complete, returning a `Vec` of the results.
 
 The above example uses the `lucidity::job` proc macro to generate a few of those functions, and they can be "called" like any other function.  The goal here is to use the excellent architecture of `lunatic`, while cutting down on some of the
 boilerplate required to successfully write the distributed code.  Setting up the `Process`es, and the `Mailbox`es, etc., is all handled for you.  
-The tradeoff is that this library is opinionated about how you write your code, and what you can do with it (open to suggestions, though).  In addition, this library introduces some simple loops with timeouts to avoid possible deadlock,
-which has some overhead.
+The tradeoff is that this library is opinionated about how you write your code, and what you can do with it (open to suggestions, though).
+
+Under the hood, each job is spawned as a small watcher `Process` on the target node, which spawns the job linked to itself, and
+sends exactly one message back: the result, or that the job's `Process` died.  Nothing polls or retries, so a slow job is only slow,
+and a job that dies (panics, traps, runs out of memory or fuel) panics the caller instead of hanging it.  Dropping a `Job` before it
+finishes cancels it.  If the target _node_ itself goes away, the caller currently waits forever.
 
 ## Library Usage
 
@@ -153,9 +157,8 @@ important to know that they exist since the "syntactic sugar" provided by this l
 This is not like "async Rust", or any other "async/await" type languages.  These `Process`es, and their `Mailbox`es, are
 more like the coroutine or goroutine behavior of other languages.
 
-As such, this library adds some overhead in the way it "feels" sort of like async Rust or blocking Rust, but it achieves
-that feel by using timeouts with wait loops.  As this project is meant more for "fanning out" rigorous work to other nodes, this 
-overhead is acceptable, but it is important to understand that this is not like "async Rust".
+As such, the generated methods "feel" sort of like async Rust or blocking Rust, but blocking here blocks the calling `Process` on
+its `Mailbox`, not a thread, and it is important to understand that this is not like "async Rust".
 
 ### WASM
 
@@ -346,15 +349,11 @@ The `lucidity::job` proc macro has a few options that can be used to customize t
 
 Generally, this do not need to be used, but they are available if you need them.
 
-* `init_retry_interval_ms`: This is the number of milliseconds to wait between retries when trying to initialize a `Process`.  Defaults to `100`.
-* `sync_retry_interval_ms`: This is the number of milliseconds to wait between retries when trying to get a blocking (e.g., `{name}_local` or `{name}_remote`) from a `Process`.  Defaults to `100`.
-* `async_init_retry_interval_ms`: This is the number of milliseconds to wait between retries when trying to initialize a `Process` asynchronously (e.g., `{name}_local_async` or `{name}_remote_async`).  Defaults to `100`.
-* `async_get_retry_interval_ms`: This is the number of milliseconds to wait between retries when trying to get a non-blocking result (e.g., `{name}_local_async` or `{name}_remote_async`) from a `Process`.  Defaults to `100`.
-* `async_set_retry_interval_ms`: This is the number of milliseconds to wait between retries when the execution `Process` attempts to set a non-blocking result (e.g., `{name}_local_async` or `{name}_remote_async`) from a `Process`.  Defaults to `100`.
-* `shutdown_retry_interval_ms`: This is the number of milliseconds to wait between retries when trying to shutdown a `Process`.  Defaults to `100`.
 * `memory`: This is the amount of maximum memory allowed to the `Process`.  Defaults to `100 * 1024 * 1024` (100MB).
-* `fuel`: This is the amount of maximum fuel allowed to the `Process`.  Defaults to `10` (each unit of fuel is approximately 100,000 WASM instructions).
-* `fanout`: This is the type of scheme to use when fanning out.  Defaults to `roundrobin`.  The other option is `random`.
+* `fuel`: This is the amount of maximum fuel allowed to the `Process`, in total (each unit of fuel is approximately 100,000 WASM instructions).  Defaults to no limit.  A job that runs out of fuel dies, which panics its caller.
+* `fanout`: This is the type of scheme to use when fanning out.  Defaults to `"roundrobin"`.  The other option is `"random"`.
+
+The `*_retry_interval_ms` options from `0.1` were removed, since nothing retries anymore; using one is a compile error.
 
 ## Feature Flags
 

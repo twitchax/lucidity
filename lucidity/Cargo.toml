@@ -1,6 +1,6 @@
 [package]
 name = "lucidity"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Aaron Roney <twitchax@gmail.com>"]
 license = "MIT"
@@ -18,14 +18,9 @@ fly = ["dep:nightfly", "dep:serde_json"]
 
 [dependencies]
 
-lucidity-core = { path = "../lucidity-core", version = "0.1.0" }
-lucidity-macros = { path = "../lucidity-macros", version = "0.1.0" }
+lucidity-core = { path = "../lucidity-core", version = "0.2.0" }
+lucidity-macros = { path = "../lucidity-macros", version = "0.2.0" }
 
 nightfly = { version = "0.1.6", optional = true }
 
 serde_json = { version = "1.0.154", optional = true }
-
-# `lunatic::abstract_process` (used by `lucidity::job`) expands to bare `lunatic::` and `serde::` paths.
-[dev-dependencies]
-lunatic = { workspace = true }
-serde = { workspace = true }

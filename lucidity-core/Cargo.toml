@@ -1,6 +1,6 @@
 [package]
 name = "lucidity-core"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Aaron Roney <twitchax@gmail.com>"]
 license = "MIT"
@@ -14,5 +14,5 @@ categories = ["orchestration"]
 
 [dependencies]
 lunatic = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 rand = "0.10.3"
