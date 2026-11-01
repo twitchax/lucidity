@@ -60,12 +60,20 @@ The repository's worker image entrypoint (`docker/app.entrypoint.sh`) SHALL star
 
 ### Requirement: Provisioning errors
 `ensure_machines` SHALL return `Err(String)` for the first machine, in name order, whose create request could not be
-sent, with the message prefixed by the failing steps (`[ensure_machine] Failed to create machine.` followed by
-`[create_machine] Failed to send request.` and the transport error).
+sent or was answered with a non-success status. The message SHALL start with
+`[ensure_machine] Failed to create machine.`, followed by `[create_machine] Failed to send request.` and the
+transport error, or by `[create_machine] Request rejected with status <status>.` and the response body.
 
 #### Scenario: Network failure
 - **WHEN** the Machines API is unreachable while `ensure_machines(key, 1)` creates `lucid-1`
 - **THEN** it returns an `Err` whose message starts with `[ensure_machine] Failed to create machine.`
+
+#### Scenario: Rejected create
+- **WHEN** the Machines API answers the create request for `lucid-1` with `422 Unprocessable Entity` and the body
+  `{"error":"invalid image"}`
+- **THEN** `ensure_machines(key, 1)` returns an `Err` whose message starts with `[ensure_machine] Failed to create machine.`
+- **AND** the message contains `[create_machine] Request rejected with status 422 Unprocessable Entity.` and
+  `{"error":"invalid image"}`
 
 ### Requirement: Listing machines
 `lucidity::fly::list_machines(key, app_name)` SHALL request `GET https://api.machines.dev/v1/apps/<app_name>/machines`

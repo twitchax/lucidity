@@ -84,3 +84,7 @@ jobs:
       - name: Test
         working-directory: lucidity
         run: cargo test -p lucidity-e2e
+      # Guest tests run on the runtime built above, through the cargo runner.
+      - name: Test fly
+        working-directory: lucidity
+        run: cargo test --target wasm32-wasip1 -p lucidity --features fly --lib
