@@ -39,14 +39,14 @@ has been handled, so a successful call takes at least 60 seconds.
 - **AND** the call returns `Ok(())` after at least 60 seconds
 
 ### Requirement: Worker machine configuration
-Each created machine SHALL use the image `twitchax/lunatic:2024.01.10` with a shared CPU, 1 vCPU, 1024 MB of memory, an
+Each created machine SHALL use the image `twitchax/lunatic:2026.11.02` with a shared CPU, 1 vCPU, 1024 MB of memory, an
 `always` restart policy, `auto_destroy` set, and a UDP service on internal port 3031. Its init command SHALL be
 `/app.entrypoint.sh http://<FLY_MACHINE_ID>.vm.<FLY_APP_NAME>.internal:3030/`, so the calling machine MUST run a lunatic
 control node on port 3030.
 
 #### Scenario: Created machine settings
 - **WHEN** `ensure_machines` creates `lucid-1` from machine `abc` of app `my-app`
-- **THEN** the machine runs `twitchax/lunatic:2024.01.10` on one shared vCPU with 1024 MB
+- **THEN** the machine runs `twitchax/lunatic:2026.11.02` on one shared vCPU with 1024 MB
 - **AND** its init command is `/app.entrypoint.sh http://abc.vm.my-app.internal:3030/`
 
 ### Requirement: Worker image entrypoint
