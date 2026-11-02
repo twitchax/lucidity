@@ -255,7 +255,7 @@ fn relay<J: JobFn>((caller, tag): (Process<Outcome<J::Output>>, Tag), mailbox: M
                 }
                 return;
             }
-            MessageSignal::Signal(ProcessDiedSignal(_)) => return caller.tag_send(tag, Err(Failed::Lost)),
+            MessageSignal::Signal(ProcessDiedSignal { .. }) => return caller.tag_send(tag, Err(Failed::Lost)),
         }
     }
 }
