@@ -8,7 +8,7 @@ description = "A distributed orchestrator platform for Rust."
 readme = "../README.md"
 repository = "https://github.com/twitchax/lucidity"
 keywords = ["lucidity", "orchestrator", "distributed", "macro"]
-categories = ["orchestration"]
+categories = ["concurrency", "wasm"]
 
 [lib]
 proc-macro = true
