@@ -195,7 +195,7 @@ fn job_inner(attr: TokenStream, item: TokenStream) -> TokenStream {
         ///
         /// Panics if no other nodes are connected.
         #vis fn #remote_async_fn_ident(#arguments) -> lucidity::Job<#job_name_ident> {
-            lucidity::Job::spawn(lucidity::random_node(), #args_value)
+            lucidity::Job::spawn_remote(#args_value)
         }
 
         /// The generated "remote fanout" function.

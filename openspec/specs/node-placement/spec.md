@@ -38,9 +38,9 @@ with no control node or peers.
 - **AND** the program exits successfully
 
 ### Requirement: Remote jobs run on a random other node
-`name_remote`, `name_remote_async`, and `lucidity::random_node()` SHALL pick a node uniformly at random from
-`remote_nodes()`, so a remote job never runs on the calling node. When `remote_nodes()` is empty they SHALL panic with
-`lucidity: no remote nodes are connected`.
+`name_remote`, `name_remote_async`, `lucidity::Job::<J>::spawn_remote(args)`, and `lucidity::random_node()` SHALL pick
+a node uniformly at random from `remote_nodes()`, so a remote job never runs on the calling node. When `remote_nodes()`
+is empty they SHALL panic with `lucidity: no remote nodes are connected`.
 
 #### Scenario: Remote call with no peers
 - **WHEN** `square_remote(5)` is called by a process whose node has no peers
@@ -50,6 +50,21 @@ with no control node or peers.
 - **WHEN** `square_remote(5)` is called on an app node whose cluster has two peers
 - **THEN** the job runs on one of the two peers
 - **AND** the call returns `25`
+
+### Requirement: Jobs skip nodes that left the cluster
+`lucidity::Job::<J>::spawn_any(nodes, args)` SHALL spawn the job on a node picked uniformly at random from `nodes`, and
+while the picked node is not in the cluster, SHALL drop it and pick again from the rest. When none of `nodes` is, it
+SHALL panic with ``lucidity: cannot spawn job `<name>`: none of the nodes <nodes> is in the cluster``. Remote jobs SHALL
+skip nodes the same way over `remote_nodes()`, and a fanout SHALL skip such a node for the rest of its jobs.
+
+#### Scenario: Some of the nodes are missing
+- **WHEN** `Job::<LocateJob>::spawn_any(&nodes, ())` is called with fifteen ids no node has, and one peer
+- **THEN** the job runs on the peer
+
+#### Scenario: None of the nodes is in the cluster
+- **WHEN** `Job::<LocateJob>::spawn_any(&nodes, ())` is called with only ids no node has
+- **THEN** the calling process panics with ``lucidity: cannot spawn job `locate`: none of the nodes [...] is in the
+  cluster``
 
 ### Requirement: Fanout spreads one job per argument set
 A fanout SHALL spawn one job per element of `args` before waiting on any of them, for both

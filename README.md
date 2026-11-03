@@ -65,10 +65,12 @@ The tradeoff is that this library is opinionated about how you write your code, 
 Under the hood, each job is spawned as a small watcher `Process` on the target node, which spawns the job linked to itself, and
 sends exactly one message back: the result, or that the job's `Process` died.  That message goes through a relay `Process` on the
 caller's node, which monitors the watcher, so if the target _node_ goes down, the relay reports the job lost instead.  Nothing polls
-or retries, so a slow job is only slow, and a job that dies (panics, traps, runs out of memory or fuel), or whose node goes down,
+or retries a job once it started, so a slow job is only slow, and a job that dies (panics, traps, runs out of memory or fuel), or whose node goes down,
 panics the caller instead of hanging it.  Dropping a `Job` before it finishes cancels it.
 
-The `remote` functions never pick the calling node; `lucidity::remote_nodes()` lists the nodes they can pick.
+The `remote` functions never pick the calling node; `lucidity::remote_nodes()` lists the nodes they can pick.  When the node they
+picked has left the cluster, they (and the `fanout` functions) spawn the job on another one; `lucidity::Job::spawn_any` does the same
+for any list of nodes.
 
 ## Library Usage
 

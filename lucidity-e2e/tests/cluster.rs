@@ -63,6 +63,30 @@ fn a_job_whose_node_goes_down_panics_its_caller() {
     assert!(!cluster.log("app").contains("unreachable: "), "{}", cluster.dump());
 }
 
+#[test]
+fn jobs_skip_nodes_outside_the_cluster() {
+    let wasm = example("missing_nodes");
+    let mut cluster = Cluster::start(1);
+    cluster.spawn_node("app", Some(&wasm));
+
+    cluster.wait_for_any("app", &["job `locate`: none of the nodes", "unreachable: ", "panicked"], Duration::from_secs(60));
+
+    assert!(cluster.log("app").contains("missing nodes: ok"), "{}", cluster.dump());
+    assert!(cluster.log("app").contains("is in the cluster"), "{}", cluster.dump());
+    assert!(!cluster.log("app").contains("unreachable: "), "{}", cluster.dump());
+}
+
+#[test]
+fn dropping_a_job_kills_it() {
+    let wasm = example("job_cancelled");
+    let mut cluster = Cluster::start(1);
+    cluster.spawn_node("app", Some(&wasm));
+
+    let outcome = cluster.wait_for_any("app", &["cancelled: ok", "panicked"], Duration::from_secs(60));
+
+    assert_eq!(outcome, "cancelled: ok", "{}", cluster.dump());
+}
+
 /// A control node and its nodes, each logging to a file in a temporary directory, killed on drop.
 struct Cluster {
     dir: TempDir,

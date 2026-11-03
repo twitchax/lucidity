@@ -8,7 +8,8 @@ dies or its node goes down, honoring its resource limits, and being cancelled wh
 ### Requirement: Spawning a job on a node
 `lucidity::Job::<J>::spawn(node, args)` SHALL start the `JobFn` `J` with `args` in a new process on `node`, which may be
 the calling node, and return a `Job<J>` without waiting for the job to finish. When `node` is not part of the cluster,
-the calling process SHALL panic.
+the calling process SHALL panic with ``lucidity: cannot spawn job `<name>` on node <node>: Node <node> isn't in the
+cluster``.
 
 #### Scenario: Spawn on the calling node
 - **WHEN** a process calls `Job::<SquareJob>::spawn(lucidity::local_node(), 7)`
