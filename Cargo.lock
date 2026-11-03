@@ -158,7 +158,7 @@ dependencies = [
 name = "lucidity-core"
 version = "0.2.0"
 dependencies = [
- "lunatic",
+ "lunatic-twitchax-patch",
  "rand",
  "serde",
 ]
@@ -181,22 +181,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "lunatic"
-version = "0.14.1"
-dependencies = [
- "bincode",
- "lunatic-macros",
- "lunatic-sys",
- "lunatic-test",
- "paste",
- "rustversion",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "lunatic-macros"
-version = "0.13.0"
+name = "lunatic-macros-twitchax-patch"
+version = "0.13.1"
 dependencies = [
  "convert_case",
  "darling",
@@ -210,11 +196,25 @@ name = "lunatic-sys"
 version = "0.14.0"
 
 [[package]]
-name = "lunatic-test"
-version = "0.13.0"
+name = "lunatic-test-twitchax-patch"
+version = "0.13.1"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "lunatic-twitchax-patch"
+version = "0.15.0"
+dependencies = [
+ "bincode",
+ "lunatic-macros-twitchax-patch",
+ "lunatic-sys",
+ "lunatic-test-twitchax-patch",
+ "paste",
+ "rustversion",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

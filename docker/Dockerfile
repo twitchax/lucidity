@@ -5,7 +5,7 @@
 FROM rust:1.99-bookworm AS build
 
 # The fork's branch or commit to build.
-ARG LUNATIC_REF=upgrade
+ARG LUNATIC_REF=v0.15.0
 ADD https://github.com/twitchax/lunatic.git#${LUNATIC_REF} /lunatic
 WORKDIR /lunatic
 RUN cargo build --release --locked

@@ -4,5 +4,5 @@ resolver = "2"
 
 # `lunatic-rs` and `lunatic` (the runtime) are developed as forks checked out next to this repo.
 [workspace.dependencies]
-lunatic = { path = "../lunatic-rs" }
+lunatic = { package = "lunatic-twitchax-patch", version = "0.15.0", path = "../lunatic-rs" }
 serde = "1.0.229"

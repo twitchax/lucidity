@@ -72,10 +72,12 @@ The `remote` functions never pick the calling node; `lucidity::remote_nodes()` l
 
 ## Library Usage
 
-First, install lunatic.
+First, install lunatic.  lucidity needs the [twitchax/lunatic](https://github.com/twitchax/lunatic) fork of the
+runtime, 0.15 or later: download a binary from its [releases](https://github.com/twitchax/lunatic/releases), or
+build it.
 
 ```bash
-$ cargo install lunatic-runtime
+$ cargo install --locked --git https://github.com/twitchax/lunatic --tag v0.15.0 lunatic-runtime
 ```
 
 Add this to your `Cargo.toml`:

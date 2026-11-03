@@ -4,7 +4,6 @@ name: Build and Test
 
 # `lunatic-rs` is a path dependency on a sibling checkout (and the e2e tests run on a sibling `lunatic`), so every job
 # lays the repos out side by side.
-# TODO: Move the `lunatic-rs` and `lunatic` refs to `main` once the `upgrade` branches land there.
 
 jobs:
 
@@ -18,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: twitchax/lunatic-rs
-          ref: upgrade
+          ref: main
           path: lunatic-rs
       - name: Install toolchain
         working-directory: lucidity
@@ -40,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: twitchax/lunatic-rs
-          ref: upgrade
+          ref: main
           path: lunatic-rs
       - name: Install toolchain
         working-directory: lucidity
@@ -62,12 +61,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: twitchax/lunatic-rs
-          ref: upgrade
+          ref: main
           path: lunatic-rs
       - uses: actions/checkout@v4
         with:
           repository: twitchax/lunatic
-          ref: upgrade
+          ref: main
           path: lunatic
       - name: Install toolchains
         run: |
