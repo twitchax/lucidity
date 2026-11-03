@@ -146,7 +146,7 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
 name = "lucidity"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "httparse",
  "lucidity-core",
@@ -156,7 +156,7 @@ dependencies = [
 
 [[package]]
 name = "lucidity-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "lunatic-twitchax-patch",
  "rand",
@@ -172,7 +172,7 @@ dependencies = [
 
 [[package]]
 name = "lucidity-macros"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "convert_case",
  "proc-macro2",
