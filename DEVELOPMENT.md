@@ -26,6 +26,7 @@ registered with a control node that has peers (see `lucidity/examples/pythagorea
 ```bash
 $ cargo test -p lucidity-macros   # macro expansion
 $ cargo test -p lucidity-e2e      # the examples on a real local cluster (needs the runtime built, or `LUNATIC_BIN`)
+$ cargo test --target wasm32-wasip1 -p lucidity --features fly --lib   # the fly module, under the runtime
 ```
 
 ## Publish to Cargo
@@ -33,7 +34,7 @@ $ cargo test -p lucidity-e2e      # the examples on a real local cluster (needs 
 Make sure `lucidity` references the correct versions of `lucidity-core` and `lucidity-macros` in `Cargo.toml`.  The `lunatic` path dependency needs a published crate (and `version`) before publishing.
 
 ```bash
-$ cargo publish -p lucidity-core
-$ cargo publish -p lucidity-macros
-$ cargo publish -p lucidity
+$ cargo publish -p lucidity-core -p lucidity-macros -p lucidity
 ```
+
+Cargo publishes the three in dependency order, waiting for each to reach the index.

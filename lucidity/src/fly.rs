@@ -14,10 +14,13 @@ const ENDPOINT: &str = "https://api.machines.dev/v1";
 
 /// Ensures that the `lunatic` cluster is running on fly.io.
 ///
-/// This function takes the app name, region, and number of machines to run.
-/// It will delete any existing machines, create new ones, prepare them,
-/// and then run the `lunatic` process on them, connecting the node to the
-/// machine id that called this function.
+/// Starts `count` worker machines, named `lucid-1` and up, in the calling machine's app and region, and runs a
+/// `lunatic` node on each, connected to the control node the calling machine runs on port 3030.  Any existing machines
+/// with those names are deleted first.  `key` is a fly.io API token; the app, machine, and region come from `FLY_APP_NAME`,
+/// `FLY_MACHINE_ID`, and `FLY_REGION`.
+///
+/// Returns `Err` naming the status and body of the first machine create the API rejects.  Panics if any of those
+/// variables is unset.
 pub fn ensure_machines(key: &str, count: usize) -> Result<(), String> {
     let app_name = std::env::var("FLY_APP_NAME").expect("FLY_APP_NAME not set.");
     let local_machine_id = std::env::var("FLY_MACHINE_ID").expect("FLY_MACHINE_ID not set.");

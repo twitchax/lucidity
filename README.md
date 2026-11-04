@@ -2,7 +2,7 @@
 [![Version](https://img.shields.io/crates/v/lucidity.svg)](https://crates.io/crates/lucidity)
 [![Crates.io](https://img.shields.io/crates/d/lucidity?label=crate)](https://crates.io/crates/lucidity)
 [![Documentation](https://docs.rs/lucidity/badge.svg)](https://docs.rs/lucidity)
-[![Rust](https://img.shields.io/badge/rust-nightly-blue.svg?maxAge=3600)](https://github.com/twitchax/rtz)
+[![Rust](https://img.shields.io/badge/rust-nightly-blue.svg?maxAge=3600)](https://github.com/twitchax/lucidity/blob/main/rust-toolchain.toml)
 [![License:MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # lucidity
@@ -11,14 +11,14 @@ A distributed execution engine built upon [lunatic](https://github.com/lunatic-s
 
 ## Motivation
 
-Basically, `lunatic` by itself is a set of "low-level" features: runtime, syscalls, and language-wrappers.
+`lunatic` by itself is a set of low-level features: a runtime, syscalls, and language wrappers.
 
-However, the `Process` architecture is a bit harder to use when trying to keep code readable.  This library provides a `proc-macro`, and, eventually, some helpers for common platforms like fly.io, to make it easier to write distributed code
+However, the `Process` architecture is a bit harder to use when trying to keep code readable.  This library provides a `proc-macro`, and helpers for fly.io (the `fly` feature), to make it easier to write distributed code
 on top of the excellent lunatic runtime.
 
 ### Example
 
-Here is a simple example below.
+Here is a simple example.
 
 ```rust
 fn main() {
@@ -37,30 +37,26 @@ fn main() {
 
 #[lucidity::job]
 fn pythagorean(a: u32, b: u32) -> f32 {
-    let num = ((square_remote_async(a).await_get() + square_remote_async(b).await_get()) as f32).sqrt();
-
-    num
+    ((square_remote_async(a).await_get() + square_remote_async(b).await_get()) as f32).sqrt()
 }
 
 #[lucidity::job]
 fn square(a: u32) -> u32 {
-    let num = a * a;
-
-    num
+    a * a
 }
 ```
 
 For each method you place the proc macro (`lucidity::job`) on, we generate a few others.
 
 * `{name}_local`, when called, spawns the function in a _node local_ `Process`, and blocks the calling `Process`.
-* `{name}_remote`, when called, spawns the function in a `Process` on a random _distributed node_, and blocks the calling `Process`.
+* `{name}_remote`, when called, spawns the function in a `Process` on a random other _distributed node_, and blocks the calling `Process`.
 * `{name}_local_async`, when called, spawns the function in a _node local_ `Process`, handing back a `lucidity::Job`, which can be checked (`try_get`), or blocked upon (`await_get`).
-* `{name}_remote_async`, when called, spawns the function in a `Process` on a random _distributed node_, handing back a `lucidity::Job`, which can be checked (`try_get`), or blocked upon (`await_get`).
-* `{name}_remote_fanout`, which takes a `Vec` of arg tuples and roundrobin distributes calls to that function with those arguments, polling all of the `Process`es, and blocking until all are complete, returning a `Vec` of the results.
+* `{name}_remote_async`, when called, spawns the function in a `Process` on a random other _distributed node_, handing back a `lucidity::Job`, which can be checked (`try_get`), or blocked upon (`await_get`).
+* `{name}_remote_fanout`, which takes a `Vec` of arg tuples, spawns one job per tuple across the other nodes (round-robin by default, see the `fanout` option), and blocks until all are complete, returning a `Vec` of the results in the same order.
 
-The above example uses the `lucidity::job` proc macro to generate a few of those functions, and they can be "called" like any other function.  The goal here is to use the excellent architecture of `lunatic`, while cutting down on some of the
-boilerplate required to successfully write the distributed code.  Setting up the `Process`es, and the `Mailbox`es, etc., is all handled for you.  
-The tradeoff is that this library is opinionated about how you write your code, and what you can do with it (open to suggestions, though).
+Those generated functions can be called like any other function; setting up the `Process`es and `Mailbox`es is handled
+for you.  The tradeoff is that this library is opinionated about how you write your code and what you can do with it
+(open to suggestions, though).
 
 Under the hood, each job is spawned as a small watcher `Process` on the target node, which spawns the job linked to itself, and
 sends exactly one message back: the result, or that the job's `Process` died.  That message goes through a relay `Process` on the
@@ -86,10 +82,10 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lucidity = "*" # choose a version
+lucidity = "0.2"
 ```
 
-In your `.cargo/config.toml`:
+lucidity builds on stable Rust; add the WASI target with `rustup target add wasm32-wasip1`.  In your `.cargo/config.toml`:
 
 ```toml
 [build]
@@ -131,15 +127,15 @@ to build and run your code in a container.  The easiest way is a simple docker c
 node.  Your entry point would look something like this.
 
 ```bash
-#!bin/bash
+#!/bin/bash
 
 /lunatic control --bind-socket [::]:3030 &
 
-/lunatic node --wasm /irl_processor.wasm --bind-socket $NODE_REACHABLE_IP:3031 http://[::1]:3030/
+/lunatic node --wasm /app.wasm --bind-socket $NODE_REACHABLE_IP:3031 http://[::1]:3030/
 ```
 
-Then, within your built wasm, you would span some nodes that would connect to the control node on other machines
-before running any of the distributed methods.
+Then, within your built wasm, you would call `lucidity::fly::ensure_machines(key, count)` (with a fly.io API token) to start
+`count` worker machines that join that control node, before running any of the distributed methods.
 
 ## `lunatic` Primer
 
@@ -147,46 +143,39 @@ This library is built on top of `lunatic`, so it is important to understand the 
 
 ### Processes
 
-`lunatic` is built around the concept of `Processes`.  A `Process` is a lightweight thread of execution that is spawned
-by the runtime.  Each `Process` has its own stack, and is isolated from other `Process`es.  `Process`es communicate
-with each other via `Mailbox`es, which are essentially queues that can be used to send messages between `Process`es.
+`lunatic` is built around `Process`es: lightweight threads of execution spawned by the runtime.  Each `Process` has its
+own isolated memory, and `Process`es communicate by sending messages to each other's `Mailbox`es.
 
-In the case of this library, you can totally use `Process`es directly, but the point of the `lucidity` library is to
-make it easier to write distributed code, so we will focus on that.
+You can still use `Process`es directly alongside `lucidity` when you need them.
 
 ### Mailboxes
 
-`Mailbox`es are the primary way that `Process`es communicate with each other.  A `Mailbox` is a queue that can be used
-to send messages between `Process`es.  Each `Process` has a `Mailbox` that can be used to send messages to that `Process`.
+Each `Process` has a `Mailbox`, a message queue that other `Process`es can send messages to.
 
-For the purposes of this library, you don't need to worry about `Mailbox`es, as they are handled for you.  However, it is
-important to know that they exist since the "syntactic sugar" provided by this library abstracts away these mssage queues.
-This is not like "async Rust", or any other "async/await" type languages.  These `Process`es, and their `Mailbox`es, are
-more like the coroutine or goroutine behavior of other languages.
+You don't need to manage `Mailbox`es directly, as `lucidity` handles them for you.  Still, it helps to know they are
+there: `Process`es and `Mailbox`es behave like coroutines or goroutines in other languages, not like async Rust.
 
-As such, the generated methods "feel" sort of like async Rust or blocking Rust, but blocking here blocks the calling `Process` on
-its `Mailbox`, not a thread, and it is important to understand that this is not like "async Rust".
+As such, the generated methods feel like async or blocking Rust, but blocking here parks the calling `Process` on its
+`Mailbox`, not a thread.
 
 ### WASM
 
-`lunatic` is built around the concept of WebAssembly (WASM).  WASM is a binary format that is meant to be run in a sandboxed
-environment.  `lunatic` is able to scale so well to a distributed model because it relies on the concept that the "runtime"
-ships with a WASM runtime, while that WASM code can make certain "runtime syscalls" for communication.  The WASM abstracts
-away the machine code such that each node can function properly with just the WASM from another node.
+`lunatic` runs code as WebAssembly (WASM) in a sandboxed environment.  Every node runs the `lunatic` runtime, which
+gives your WASM syscalls for communication, and because WASM abstracts away the machine code, any node can run the WASM
+from another node.
 
-Theoretically, multiple nodes could each be initialized with their own WASM, and the `lunatic` runtime would be able to
-spawn `Process`es on any of those nodes, as each node would send its WASM to the other nodes.
+Multiple nodes could each be started with their own WASM: each node registers its module with the control node, and the
+`lunatic` runtime can spawn `Process`es from any of those modules on any node.
 
 ### Remote Processes
 
-`Process`es that are spawed remotely take advantage of the fact that your executable _is_ WASM.  Basically, `lunatic`
-sends a copy of your WASM executable to the remote node, and then spawns a `Process` there, essentially using function
-pointers to call the functions in your WASM executable.  This is why you need to build your code as WASM, and why you
-need to run the control node, and the application node, with the same executable.
+`Process`es spawned remotely take advantage of the fact that your executable _is_ WASM.  The application node registers
+your WASM executable with the control node, and a remote node downloads it from there (once) before spawning a
+`Process`, using function pointers to call into your WASM executable.  This is why you need to build your code as WASM,
+and why only the application node needs the `.wasm` file.
 
-However, you don't need to worry about getting your code onto _other_ nodes.  The `lunatic` runtime handles this automatically.
-This also means that your "bare" functions "just work".  That function is in the WASM, so if a process calls that function,
-it will be called on the node where the process is running since that node _has_ the WASM.
+The `lunatic` runtime distributes your code to _other_ nodes automatically, so your "bare" functions "just work": if a
+remote process calls a normal function, that function is already in the WASM on the node where the process is running.
 
 Pretty cool, right?
 
@@ -209,7 +198,7 @@ Even if you mark a function with the `lucidity::job` proc macro, you can still c
 
 ```rust
 fn main() {
-    // Calling `square` here does not span a process, and is called by the currently executing process
+    // Calling `square` here does not spawn a process, and is called by the currently executing process
     // as if it were a normal function.
     let result = square(3);
 
@@ -223,9 +212,7 @@ If you want to spawn a process locally, you can use the `{name}_local` method.
 
 ```rust
 fn main() {
-    // The `remote_fanout` is discussed below, but this is sort of the main meat and potatoes.
-    // This function will be called on a set of nodes (round-robin-ed), and each of those nodes
-    // will run it in a process.
+    // Fans `pythagorean1` out across the remote nodes (see "Remote Fanout" below).
     let results = pythagorean1_remote_fanout(vec![
         (3, 4),
         (4, 5),
@@ -241,21 +228,16 @@ fn main() {
 
 #[lucidity::job]
 fn pythagorean1(a: u32, b: u32) -> f32 {
-    // Calling `square_local` here spawns a process locally, and blocks the current process until the
-    // spawned process completes.  This is great for allowing the `lunatic` executor to "yield" more often,
-    // especially if the `square` method had reasonable yield points.  However, the process it is called from is blocked,
-    // so keep that in mind.
-    //
-    // In this case, we don't really mind blocking here, since we are in a lightweight process.  However, you may notice
-    // there is an inefficiency in not computing the square of `a` and `b` in parallel.
+    // Calling `square_local` spawns a local process and blocks the calling process until it completes.
+    // This lets the `lunatic` executor yield more often (especially if `square` has yield points),
+    // and blocking is cheap in a lightweight process, though `a` and `b` are not squared in parallel.
     ((square_local(a) + square_local(b)) as f32).sqrt()
 }
 
 #[lucidity::job]
 fn pythagorean2(a: u32, b: u32) -> f32 {
-    // Calling `square_remote` here spawns a process on a random remote node, and blocks the current process until the
-    // spawned process completes.  This is great for ensuring a certain set of processes are being distributed,
-    // but blocks the process it is called from.
+    // Calling `square_remote` spawns a process on a random remote node and blocks the calling process until it
+    // completes, so the work is distributed, but `a` and `b` are still squared one after the other.
     ((square_remote(a) + square_remote(b)) as f32).sqrt()
 }
 ```
@@ -266,9 +248,7 @@ If you want more fine-grained control over when to block, you can use the `{name
 
 ```rust
 fn main() {
-    // The `remote_fanout` is discussed below, but this is sort of the main meat and potatoes.
-    // This function will be called on a set of nodes (round-robin-ed), and each of those nodes
-    // will run it in a process.
+    // Fans `pythagorean1` out across the remote nodes (see "Remote Fanout" below).
     let results = pythagorean1_remote_fanout(vec![
         (3, 4),
         (4, 5),
@@ -285,7 +265,7 @@ fn main() {
 
 #[lucidity::job]
 fn pythagorean1(a: u32, b: u32) -> f32 {
-    // This spawns a local process, and hands back a `Job` that can be polled, or blocked upon.
+    // Each call spawns a local process, and hands back a `Job` that can be polled, or blocked upon.
     // Here, we are going to block with `await_get`.  This can be used for either local or remote
     // async jobs.
     let square_a_job = square_local_async(a);
@@ -296,15 +276,15 @@ fn pythagorean1(a: u32, b: u32) -> f32 {
 
     // Maybe do some other work in here ...
 
-    let mut square_a = square_a_job.await_get();
-    let mut square_b = square_b_job.await_get();
+    let square_a = square_a_job.await_get();
+    let square_b = square_b_job.await_get();
 
     ((square_a + square_b) as f32).sqrt()
 }
 
 #[lucidity::job]
 fn pythagorean2(a: u32, b: u32) -> f32 {
-    // This spawns a local process, and hands back a `Job` that can be polled, or blocked upon.
+    // Each call spawns a remote process, and hands back a `Job` that can be polled, or blocked upon.
     // Here, we are going to loop and check for completion with `try_get` (sort of naively).  This can be used for either local or remote
     // async jobs.
     let square_a_job = square_remote_async(a);
@@ -312,19 +292,19 @@ fn pythagorean2(a: u32, b: u32) -> f32 {
 
     // We get to this point "immediately".  The `square_a_job` and `square_b_job` are running in
     // their own processes, and we can do other work here.
-    
+
     // Maybe do your own looping ...
     let (square_a, square_b) = loop {
         let Some(a) = square_a_job.try_get() else {
             continue;
-        }
+        };
 
         let Some(b) = square_b_job.try_get() else {
             continue;
-        }
+        };
 
         break (a, b);
-    }
+    };
 
     ((square_a + square_b) as f32).sqrt()
 }
@@ -332,18 +312,14 @@ fn pythagorean2(a: u32, b: u32) -> f32 {
 
 ### Remote Fanout
 
-If you essentially want to do the same operation, but with different arguments, and you want to block on all of them,
-you can use the `{name}_remote_fanout` method.
+To run the same operation across a list of arguments and block until all of them complete, use the
+`{name}_remote_fanout` method.
 
 ```rust
 fn main() {
-    // The `remote_fanout` is discussed below, but this is sort of the main meat and potatoes.
-    // This function will be called on a set of nodes (round-robin-ed), and each of those nodes
-    // will run it in a process.
-    //
-    // This is great for ensuring a certain set of processes are being distributed, but blocks the process it is called from.
-    // You may have something where you are processing a set of images.  This would be a great use case to put those images
-    // in a `Vec`, and then call this method to fan out all of the work.
+    // Calls `square` across the remote nodes (round-robin by default), running each input in its
+    // own process and blocking the calling process until all of them finish.  For example, you could
+    // put a batch of images in a `Vec` and call this method to fan out the work.
     let results = square_remote_fanout(vec![1, 2, 3, 4, 5]);
 
     println!("result: {:#?}", results);
@@ -354,29 +330,29 @@ fn main() {
 
 The `lucidity::job` proc macro has a few options that can be used to customize the behavior of the generated methods.
 
-Generally, this do not need to be used, but they are available if you need them.
+Generally, these do not need to be used, but they are available if you need them.
 
-* `memory`: This is the amount of maximum memory allowed to the `Process`.  Defaults to `100 * 1024 * 1024` (100MB).
-* `fuel`: This is the amount of maximum fuel allowed to the `Process`, in total (each unit of fuel is approximately 100,000 WASM instructions).  Defaults to no limit.  A job that runs out of fuel dies, which panics its caller.
-* `fanout`: This is the type of scheme to use when fanning out.  Defaults to `"roundrobin"`.  The other option is `"random"`.
+* `memory`: The maximum memory a job's `Process` may use.  Defaults to `100 * 1024 * 1024` (100 MiB).
+* `fuel`: The maximum fuel a job's `Process` may use in total (one unit of fuel is about 100,000 WASM instructions).  Defaults to no limit.  A job that runs out of fuel dies, which panics its caller.
+* `fanout`: How `{name}_remote_fanout` picks nodes.  Defaults to `"roundrobin"`.  The other option is `"random"`.
 
 The `*_retry_interval_ms` options from `0.1` were removed, since nothing retries anymore; using one is a compile error.
 
 ## Feature Flags
 
-* `fly`: This enables the `fly` feature, which allows you to use the `fly.io` platform to automatically set up nodes
-  from the main `lunatic` node.  This is not enabled by default, as it requires a `fly.io` account, and a bit of setup.
-  See the `fly.io` documentation for more information.
+* `fly`: This enables the `lucidity::fly` module, which allows you to use the `fly.io` platform to automatically set up nodes
+  from the main `lunatic` node: `ensure_machines(key, count)` starts `count` worker machines (named `lucid-1` and up) from
+  the `twitchax/lunatic` image (`docker/Dockerfile`) and joins them to the control node on the calling machine's port 3030,
+  and `list_machines(key, app_name)` lists an app's machines.  This is not enabled by default, as it requires a `fly.io`
+  account, and a bit of setup.
 
 ## Test
 
-```bash
-cargo test
-```
+See [DEVELOPMENT.md](DEVELOPMENT.md): the end-to-end tests run the examples on a real local cluster.
 
 ## Thanks
 
-Special thanks to the [lunatic](https://github.com/lunatic-solutions/lunatic)'s authors and contributors for their excellent work,
+Special thanks to [lunatic](https://github.com/lunatic-solutions/lunatic)'s authors and contributors for their excellent work,
 and special thanks to the primary author, [bkolobara](https://github.com/bkolobara).
 
 ## License
